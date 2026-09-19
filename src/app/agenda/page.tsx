@@ -29,7 +29,9 @@ import {
   Move,
   ArrowRight,
   Check,
+  Share2,
 } from "lucide-react";
+import ShareWorkoutModal from "@/components/ShareWorkoutModal";
 import {
   formatDateShort,
   formatDayOfWeek,
@@ -140,6 +142,28 @@ function AgendaContent() {
     startTime: string;
     endTime: string;
   } | null>(null);
+
+  // Estados para Compartilhamento de Mensagem / Treino via WhatsApp
+  const [sharingClass, setSharingClass] = useState<ClassItem | null>(null);
+  const [studentPlansForShare, setStudentPlansForShare] = useState<any[]>([]);
+  const [loadingStudentPlans, setLoadingStudentPlans] = useState(false);
+  const [activeShareWorkout, setActiveShareWorkout] = useState<any | null>(null);
+
+  const handleOpenShareOptions = async (cls: ClassItem) => {
+    setSharingClass(cls);
+    setLoadingStudentPlans(true);
+    try {
+      const res = await fetch(`/api/workouts?studentId=${cls.studentId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStudentPlansForShare(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar treinos do aluno para compartilhamento:", err);
+    } finally {
+      setLoadingStudentPlans(false);
+    }
+  };
 
   // Lista de alunos para os selects
   const [students, setStudents] = useState<Array<{ id: string; name: string }>>([]);
@@ -741,18 +765,15 @@ function AgendaContent() {
 
                 {/* Atalhos Rápidos da Hero Class */}
                 <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-800">
-                  <a
-                    href={buildWhatsAppLink(
-                      heroClass.student.phone,
-                      `Olá, ${heroClass.student.name.split(" ")[0]}! Confirmando nossa aula hoje às ${heroClass.startTime}. Nos vemos lá! 💪`
-                    )}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => handleOpenShareOptions(heroClass)}
                     className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800/80 hover:bg-emerald-600/20 text-emerald-400 border border-zinc-700/60 text-xs font-semibold transition min-h-[40px]"
+                    title="Enviar aviso ou ficha de treino no WhatsApp"
                   >
                     <MessageCircle className="w-4 h-4" />
-                    <span>WhatsApp</span>
-                  </a>
+                    <span>WhatsApp / Treino</span>
+                  </button>
 
                   <Link
                     href={`/planos?studentId=${heroClass.studentId}`}

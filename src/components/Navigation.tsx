@@ -11,6 +11,7 @@ import {
   Dumbbell,
   Settings,
   Lock,
+  ListOrdered,
 } from "lucide-react";
 
 interface NavItem {
@@ -25,6 +26,7 @@ const navItems: NavItem[] = [
   { name: "Agenda", href: "/agenda", icon: Calendar },
   { name: "Financeiro", href: "/financeiro", icon: Wallet },
   { name: "Planos", href: "/planos", icon: Dumbbell },
+  { name: "Exercícios", href: "/exercicios", icon: ListOrdered },
 ];
 
 export default function Navigation() {

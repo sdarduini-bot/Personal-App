@@ -119,3 +119,17 @@ model WorkoutExercise {
 
   @@index([workoutPlanId, order])
 }
+
+model ExerciseCatalog {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   // Peito, Costas, Ombros, Bíceps, Tríceps, Quadríceps, Posteriores/Glúteos, Panturrilhas, Abdômen/Core, Cardio/Funcional
+  muscleGroup String?
+  isCustom    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([name])
+}
+

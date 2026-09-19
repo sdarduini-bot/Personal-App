@@ -1,0 +1,155 @@
+export interface DefaultExercise {
+  name: string;
+  category: string;
+  muscleGroup?: string;
+}
+
+export const EXERCISE_CATEGORIES = [
+  "Todos",
+  "Peitoral",
+  "Costas",
+  "Ombros & Trapézio",
+  "Bíceps & Antebraço",
+  "Tríceps",
+  "Quadríceps (Pernas)",
+  "Posteriores & Glúteos",
+  "Panturrilhas",
+  "Abdômen & Core",
+  "Cardio & Funcional",
+] as const;
+
+export const DEFAULT_EXERCISES: DefaultExercise[] = [
+  // 1. PEITORAL
+  { name: "Supino Reto com Barra", category: "Peitoral", muscleGroup: "Peitoral Maior" },
+  { name: "Supino Reto com Halteres", category: "Peitoral", muscleGroup: "Peitoral Maior" },
+  { name: "Supino Inclinado com Barra", category: "Peitoral", muscleGroup: "Peitoral Superior" },
+  { name: "Supino Inclinado com Halteres", category: "Peitoral", muscleGroup: "Peitoral Superior" },
+  { name: "Supino Declinado com Barra", category: "Peitoral", muscleGroup: "Peitoral Inferior" },
+  { name: "Supino Declinado com Halteres", category: "Peitoral", muscleGroup: "Peitoral Inferior" },
+  { name: "Crucifixo Reto com Halteres", category: "Peitoral", muscleGroup: "Peitoral Maior" },
+  { name: "Crucifixo Inclinado com Halteres", category: "Peitoral", muscleGroup: "Peitoral Superior" },
+  { name: "Crucifixo na Polia (Crossover Médio)", category: "Peitoral", muscleGroup: "Peitoral Maior" },
+  { name: "Crossover na Polia Alta", category: "Peitoral", muscleGroup: "Peitoral Inferior" },
+  { name: "Crossover na Polia Baixa", category: "Peitoral", muscleGroup: "Peitoral Superior" },
+  { name: "Peck Deck / Voador", category: "Peitoral", muscleGroup: "Peitoral Maior" },
+  { name: "Flexão de Braço no Solo", category: "Peitoral", muscleGroup: "Peitoral Geral" },
+  { name: "Mergulho nas Paralelas para Peito", category: "Peitoral", muscleGroup: "Peitoral Inferior" },
+
+  // 2. COSTAS
+  { name: "Puxada Alta no Pulley (Pronada)", category: "Costas", muscleGroup: "Latíssimo do Dorso" },
+  { name: "Puxada Alta no Pulley (Supinada)", category: "Costas", muscleGroup: "Latíssimo e Bíceps" },
+  { name: "Puxada no Pulley com Triângulo", category: "Costas", muscleGroup: "Latíssimo do Dorso" },
+  { name: "Puxada Articulada na Máquina", category: "Costas", muscleGroup: "Latíssimo do Dorso" },
+  { name: "Remada Curvada com Barra (Pronada)", category: "Costas", muscleGroup: "Costas Média" },
+  { name: "Remada Curvada com Barra (Supinada)", category: "Costas", muscleGroup: "Costas Média" },
+  { name: "Remada Curvada com Halteres", category: "Costas", muscleGroup: "Costas Média" },
+  { name: "Remada Serrote Unilateral com Halter", category: "Costas", muscleGroup: "Latíssimo do Dorso" },
+  { name: "Remada Baixa no Triângulo", category: "Costas", muscleGroup: "Costas Média" },
+  { name: "Remada Cavalinho (Barra T)", category: "Costas", muscleGroup: "Costas e Trapézio" },
+  { name: "Barra Fixa (Pull-up Pronada)", category: "Costas", muscleGroup: "Costas Geral" },
+  { name: "Barra Fixa (Chin-up Supinada)", category: "Costas", muscleGroup: "Costas e Bíceps" },
+  { name: "Pulldown na Polia com Barra / Corda", category: "Costas", muscleGroup: "Latíssimo do Dorso" },
+  { name: "Levantamento Terra Convencional", category: "Costas", muscleGroup: "Cadeia Posterior e Lombar" },
+  { name: "Extensão Lombar (Banco Romano / Hiperextensão)", category: "Costas", muscleGroup: "Lombar" },
+
+  // 3. OMBROS & TRAPÉZIO
+  { name: "Desenvolvimento com Halteres", category: "Ombros & Trapézio", muscleGroup: "Deltoide Anterior e Médio" },
+  { name: "Desenvolvimento Militar com Barra", category: "Ombros & Trapézio", muscleGroup: "Deltoide Anterior" },
+  { name: "Desenvolvimento Arnold com Halteres", category: "Ombros & Trapézio", muscleGroup: "Deltoide Geral" },
+  { name: "Desenvolvimento na Máquina / Smith", category: "Ombros & Trapézio", muscleGroup: "Deltoides" },
+  { name: "Elevação Lateral com Halteres", category: "Ombros & Trapézio", muscleGroup: "Deltoide Lateral" },
+  { name: "Elevação Lateral na Polia", category: "Ombros & Trapézio", muscleGroup: "Deltoide Lateral" },
+  { name: "Elevação Frontal com Halteres", category: "Ombros & Trapézio", muscleGroup: "Deltoide Anterior" },
+  { name: "Elevação Frontal com Barra / Anilha", category: "Ombros & Trapézio", muscleGroup: "Deltoide Anterior" },
+  { name: "Elevação Frontal na Polia", category: "Ombros & Trapézio", muscleGroup: "Deltoide Anterior" },
+  { name: "Crucifixo Invertido com Halteres", category: "Ombros & Trapézio", muscleGroup: "Deltoide Posterior" },
+  { name: "Crucifixo Invertido no Peck Deck", category: "Ombros & Trapézio", muscleGroup: "Deltoide Posterior" },
+  { name: "Face Pull na Polia com Corda", category: "Ombros & Trapézio", muscleGroup: "Deltoide Posterior e Trapézio" },
+  { name: "Encolhimento com Barra", category: "Ombros & Trapézio", muscleGroup: "Trapézio Superior" },
+  { name: "Encolhimento com Halteres", category: "Ombros & Trapézio", muscleGroup: "Trapézio Superior" },
+
+  // 4. BÍCEPS & ANTEBRAÇO
+  { name: "Rosca Direta com Barra Reta", category: "Bíceps & Antebraço", muscleGroup: "Bíceps Braquial" },
+  { name: "Rosca Direta com Barra W", category: "Bíceps & Antebraço", muscleGroup: "Bíceps Braquial" },
+  { name: "Rosca Direta com Halteres", category: "Bíceps & Antebraço", muscleGroup: "Bíceps Braquial" },
+  { name: "Rosca Alternada com Halteres", category: "Bíceps & Antebraço", muscleGroup: "Bíceps Braquial" },
+  { name: "Rosca Martelo com Halteres", category: "Bíceps & Antebraço", muscleGroup: "Braquiorradial e Bíceps" },
+  { name: "Rosca Martelo na Polia com Corda", category: "Bíceps & Antebraço", muscleGroup: "Braquiorradial" },
+  { name: "Rosca Scott com Barra W", category: "Bíceps & Antebraço", muscleGroup: "Bíceps (Isolamento)" },
+  { name: "Rosca Scott com Halter Unilateral", category: "Bíceps & Antebraço", muscleGroup: "Bíceps (Isolamento)" },
+  { name: "Rosca Concentrada com Halter", category: "Bíceps & Antebraço", muscleGroup: "Bíceps (Pico)" },
+  { name: "Rosca Inclinada no Banco 45º", category: "Bíceps & Antebraço", muscleGroup: "Cabeça Longa do Bíceps" },
+  { name: "Rosca na Polia Alta (Hércules)", category: "Bíceps & Antebraço", muscleGroup: "Bíceps Braquial" },
+  { name: "Rosca Inversa com Barra W", category: "Bíceps & Antebraço", muscleGroup: "Antebraço e Braquial" },
+  { name: "Flexão de Punho com Halteres / Barra", category: "Bíceps & Antebraço", muscleGroup: "Flexores do Antebraço" },
+
+  // 5. TRÍCEPS
+  { name: "Tríceps Corda na Polia", category: "Tríceps", muscleGroup: "Cabeça Lateral e Longa" },
+  { name: "Tríceps Barra Reta na Polia", category: "Tríceps", muscleGroup: "Tríceps Geral" },
+  { name: "Tríceps Barra V na Polia", category: "Tríceps", muscleGroup: "Tríceps Geral" },
+  { name: "Tríceps Testa com Barra W", category: "Tríceps", muscleGroup: "Cabeça Longa e Média" },
+  { name: "Tríceps Testa com Halteres", category: "Tríceps", muscleGroup: "Cabeça Longa e Média" },
+  { name: "Tríceps Francês com Halter (Bilateral)", category: "Tríceps", muscleGroup: "Cabeça Longa" },
+  { name: "Tríceps Francês com Halter Unilateral", category: "Tríceps", muscleGroup: "Cabeça Longa" },
+  { name: "Tríceps Francês na Polia com Corda", category: "Tríceps", muscleGroup: "Cabeça Longa" },
+  { name: "Tríceps Coice com Halter", category: "Tríceps", muscleGroup: "Cabeça Lateral" },
+  { name: "Tríceps Coice na Polia", category: "Tríceps", muscleGroup: "Cabeça Lateral" },
+  { name: "Tríceps Mergulho no Banco", category: "Tríceps", muscleGroup: "Tríceps Geral" },
+  { name: "Supino Fechado com Barra", category: "Tríceps", muscleGroup: "Tríceps e Peitoral" },
+
+  // 6. QUADRÍCEPS (PERNAS)
+  { name: "Agachamento Livre com Barra", category: "Quadríceps (Pernas)", muscleGroup: "Quadríceps e Glúteos" },
+  { name: "Agachamento Frontal com Barra", category: "Quadríceps (Pernas)", muscleGroup: "Quadríceps" },
+  { name: "Agachamento no Smith", category: "Quadríceps (Pernas)", muscleGroup: "Quadríceps e Glúteos" },
+  { name: "Agachamento Hack Machine", category: "Quadríceps (Pernas)", muscleGroup: "Quadríceps" },
+  { name: "Leg Press 45º", category: "Quadríceps (Pernas)", muscleGroup: "Quadríceps e Glúteos" },
+  { name: "Leg Press Horizontal", category: "Quadríceps (Pernas)", muscleGroup: "Quadríceps" },
+  { name: "Cadeira Extensora", category: "Quadríceps (Pernas)", muscleGroup: "Quadríceps (Isolamento)" },
+  { name: "Agachamento Búlgaro com Halteres", category: "Quadríceps (Pernas)", muscleGroup: "Quadríceps e Glúteos" },
+  { name: "Passada / Avanço com Halteres", category: "Quadríceps (Pernas)", muscleGroup: "Quadríceps e Glúteos" },
+  { name: "Agachamento Sumô com Halter / Kettlebell", category: "Quadríceps (Pernas)", muscleGroup: "Adutores e Glúteos" },
+  { name: "Sissy Squat", category: "Quadríceps (Pernas)", muscleGroup: "Quadríceps (Isolamento)" },
+
+  // 7. POSTERIORES & GLÚTEOS
+  { name: "Mesa Flexora Deitada", category: "Posteriores & Glúteos", muscleGroup: "Isquiotibiais" },
+  { name: "Cadeira Flexora Sentada", category: "Posteriores & Glúteos", muscleGroup: "Isquiotibiais" },
+  { name: "Flexora Vertical Unilateral", category: "Posteriores & Glúteos", muscleGroup: "Isquiotibiais" },
+  { name: "Stiff com Barra", category: "Posteriores & Glúteos", muscleGroup: "Isquiotibiais e Glúteos" },
+  { name: "Stiff com Halteres", category: "Posteriores & Glúteos", muscleGroup: "Isquiotibiais e Glúteos" },
+  { name: "Levantamento Terra Romeno (RDL)", category: "Posteriores & Glúteos", muscleGroup: "Glúteos e Posteriores" },
+  { name: "Elevação Pélvica com Barra", category: "Posteriores & Glúteos", muscleGroup: "Glúteo Máximo" },
+  { name: "Elevação Pélvica na Máquina", category: "Posteriores & Glúteos", muscleGroup: "Glúteo Máximo" },
+  { name: "Glúteo na Polia (Cabo Coice)", category: "Posteriores & Glúteos", muscleGroup: "Glúteos" },
+  { name: "Glúteo 4 Apoios com Caneleira", category: "Posteriores & Glúteos", muscleGroup: "Glúteos" },
+  { name: "Cadeira Abdutora", category: "Posteriores & Glúteos", muscleGroup: "Glúteo Médio e Mínimo" },
+  { name: "Cadeira Adutora", category: "Posteriores & Glúteos", muscleGroup: "Adutores da Coxa" },
+
+  // 8. PANTURRILHAS
+  { name: "Panturrilha em Pé na Máquina / Smith", category: "Panturrilhas", muscleGroup: "Gastrocnêmio" },
+  { name: "Panturrilha Sentado (Gêmeos)", category: "Panturrilhas", muscleGroup: "Sóleo" },
+  { name: "Panturrilha no Leg Press 45º", category: "Panturrilhas", muscleGroup: "Gastrocnêmio e Sóleo" },
+  { name: "Panturrilha Unilateral no Degrau com Halter", category: "Panturrilhas", muscleGroup: "Gastrocnêmio" },
+  { name: "Panturrilha Tipo Burrinho (Donkey Calf Raise)", category: "Panturrilhas", muscleGroup: "Gastrocnêmio" },
+
+  // 9. ABDÔMEN & CORE
+  { name: "Abdominal Supra no Chão", category: "Abdômen & Core", muscleGroup: "Reto Abdominal Superior" },
+  { name: "Abdominal Infra no Chão", category: "Abdômen & Core", muscleGroup: "Reto Abdominal Inferior" },
+  { name: "Abdominal Infra na Paralela / Barra Fixa", category: "Abdômen & Core", muscleGroup: "Reto Abdominal e Flexores" },
+  { name: "Abdominal Remador", category: "Abdômen & Core", muscleGroup: "Reto Abdominal Completo" },
+  { name: "Abdominal na Polia Alta (Crunch no Cabo)", category: "Abdômen & Core", muscleGroup: "Reto Abdominal" },
+  { name: "Prancha Isométrica no Chão", category: "Abdômen & Core", muscleGroup: "Core e Estabilizadores" },
+  { name: "Prancha Lateral", category: "Abdômen & Core", muscleGroup: "Oblíquos" },
+  { name: "Roda Abdominal (Ab Wheel)", category: "Abdômen & Core", muscleGroup: "Core e Reto Abdominal" },
+  { name: "Russian Twist com Halter / Anilha", category: "Abdômen & Core", muscleGroup: "Oblíquos" },
+  { name: "Vácuo Abdominal (Stomach Vacuum)", category: "Abdômen & Core", muscleGroup: "Transverso do Abdômen" },
+
+  // 10. CARDIO & FUNCIONAL
+  { name: "Esteira - Corrida / Caminhada Inclinada", category: "Cardio & Funcional", muscleGroup: "Cardiorrespiratório" },
+  { name: "Bicicleta Ergométrica / Spinning", category: "Cardio & Funcional", muscleGroup: "Cardiorrespiratório" },
+  { name: "Elíptico / Transport", category: "Cardio & Funcional", muscleGroup: "Cardiorrespiratório" },
+  { name: "Remo Seco (Rowing Machine)", category: "Cardio & Funcional", muscleGroup: "Cardio e Costas" },
+  { name: "Pular Corda", category: "Cardio & Funcional", muscleGroup: "Coordenação e Cardio" },
+  { name: "Kettlebell Swing", category: "Cardio & Funcional", muscleGroup: "Cadeia Posterior e Core" },
+  { name: "Burpee Completo", category: "Cardio & Funcional", muscleGroup: "Condicionamento Geral" },
+  { name: "Alongamento Global e Mobilidade Articular", category: "Cardio & Funcional", muscleGroup: "Flexibilidade" },
+];

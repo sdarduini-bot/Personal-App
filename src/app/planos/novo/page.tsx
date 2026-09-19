@@ -17,8 +17,10 @@ import {
   HelpCircle,
   Copy,
   Edit3,
+  BookOpen,
 } from "lucide-react";
 import { fetchWithCache, clearCache } from "@/lib/cache";
+import ExercisePickerModal from "@/components/ExercisePickerModal";
 
 interface ExerciseRow {
   id: string;
@@ -29,28 +31,6 @@ interface ExerciseRow {
   restSeconds: number;
   notes: string;
 }
-
-const COMMON_EXERCISES = [
-  "Supino Reto com Barra",
-  "Supino Inclinado com Halteres",
-  "Crucifixo na Polia",
-  "Puxada Alta no Pulley",
-  "Remada Curvada com Barra",
-  "Remada Baixa no Triângulo",
-  "Agachamento Livre com Barra",
-  "Agachamento Búlgaro",
-  "Leg Press 45º",
-  "Cadeira Extensora",
-  "Mesa Flexora",
-  "Elevação Pélvica com Barra",
-  "Cadeira Abdutora",
-  "Desenvolvimento de Ombros com Halteres",
-  "Elevação Lateral na Polia",
-  "Tríceps Corda na Polia",
-  "Rosca Direta com Barra W",
-  "Prancha Abdominal Isométrica",
-  "Abdominal Infra na Paralela",
-];
 
 function NovoPlanoContent() {
   const router = useRouter();
@@ -70,6 +50,7 @@ function NovoPlanoContent() {
   const [sourcePlanTitle, setSourcePlanTitle] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loadingExisting, setLoadingExisting] = useState(Boolean(editId || cloneFromId));
+  const [pickerExerciseIndex, setPickerExerciseIndex] = useState<number | null>(null);
 
   const [exercises, setExercises] = useState<ExerciseRow[]>([
     {
@@ -415,18 +396,28 @@ function NovoPlanoContent() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                      {/* Nome do exercício com datalist de sugestões */}
+                      {/* Nome do exercício com botão da Biblioteca e digitação livre */}
                       <div className="sm:col-span-6">
-                        <label className="text-[11px] font-semibold text-zinc-400 block mb-1">
-                          Nome do Exercício *
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[11px] font-semibold text-zinc-400">
+                            Nome do Exercício *
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setPickerExerciseIndex(idx)}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition px-2 py-0.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20"
+                            title="Buscar na biblioteca de 120+ exercícios"
+                          >
+                            <BookOpen className="w-3 h-3" />
+                            <span>Biblioteca</span>
+                          </button>
+                        </div>
                         <input
                           type="text"
                           required
-                          list="common-exercises"
                           value={ex.name}
                           onChange={(e) => updateExercise(idx, "name", e.target.value)}
-                          placeholder="Digite ou escolha um exercício..."
+                          placeholder="Digite ou escolha da biblioteca..."
                           className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs min-h-[44px] text-zinc-100 focus:outline-none focus:border-emerald-500"
                         />
                       </div>
@@ -513,13 +504,6 @@ function NovoPlanoContent() {
                 ))}
               </div>
 
-              {/* Datalist com sugestões para autocomplete */}
-              <datalist id="common-exercises">
-                {COMMON_EXERCISES.map((exName) => (
-                  <option key={exName} value={exName} />
-                ))}
-              </datalist>
-
               <button
                 type="button"
                 onClick={addExercise}
@@ -529,6 +513,20 @@ function NovoPlanoContent() {
                 <span>Adicionar Mais um Exercício</span>
               </button>
             </div>
+
+            {/* Modal de Escolha de Exercício da Biblioteca */}
+            <ExercisePickerModal
+              isOpen={pickerExerciseIndex !== null}
+              onClose={() => setPickerExerciseIndex(null)}
+              currentSelected={
+                pickerExerciseIndex !== null ? exercises[pickerExerciseIndex]?.name : ""
+              }
+              onSelect={(chosenName) => {
+                if (pickerExerciseIndex !== null) {
+                  updateExercise(pickerExerciseIndex, "name", chosenName);
+                }
+              }}
+            />
 
             {/* Botão de Salvar Treino */}
             <div className="flex items-center justify-end gap-3 pt-4">
