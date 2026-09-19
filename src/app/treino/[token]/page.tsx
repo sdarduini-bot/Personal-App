@@ -163,7 +163,10 @@ export default function PublicWorkoutPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-24 selection:bg-emerald-500/30">
       {/* 1. HEADER DO TREINO DO ALUNO */}
-      <header className="sticky top-0 z-30 bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-800/80 px-4 py-3">
+      <header
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.875rem)" }}
+        className="sticky top-0 z-30 bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-800/80 px-4 pb-3"
+      >
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 p-0.5 shadow-md shadow-emerald-500/20">

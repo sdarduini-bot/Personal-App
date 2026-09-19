@@ -20,7 +20,10 @@ export default function Header({ title, subtitle }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-800/80 px-4 py-3 md:px-8">
+    <header
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.875rem)" }}
+      className="sticky top-0 z-30 bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-800/80 px-4 pb-3 md:px-8"
+    >
       <div className="flex items-center justify-between max-w-6xl mx-auto">
         {/* Lado Esquerdo: Mobile Logo ou Título da Página */}
         <div className="flex items-center gap-3">
