@@ -1129,15 +1129,17 @@ function AgendaContent() {
                                         <Clock className="w-3.5 h-3.5" />
                                       </button>
 
-                                      <a
-                                        href={waLink}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-emerald-400 border border-zinc-700/60 transition"
-                                        title="Avisar no WhatsApp"
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleOpenShareOptions(cls);
+                                        }}
+                                        className="p-2 rounded-xl bg-zinc-800 hover:bg-emerald-600/20 text-emerald-400 border border-zinc-700/60 transition"
+                                        title="Enviar aviso de horário ou ficha de treino no WhatsApp"
                                       >
                                         <MessageCircle className="w-3.5 h-3.5" />
-                                      </a>
+                                      </button>
 
                                       <button
                                         type="button"
@@ -1371,15 +1373,17 @@ function AgendaContent() {
                                 <span>Remarcar</span>
                               </button>
 
-                              <a
-                                href={waLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenShareOptions(cls);
+                                }}
                                 className="p-2.5 rounded-xl bg-zinc-800/80 hover:bg-emerald-600/20 text-emerald-400 border border-zinc-700/60 transition min-h-[40px] flex items-center justify-center"
-                                title="Avisar no WhatsApp"
+                                title="Enviar aviso de horário ou ficha de treino no WhatsApp"
                               >
                                 <MessageCircle className="w-4 h-4" />
-                              </a>
+                              </button>
 
                               <button
                                 type="button"
@@ -2279,6 +2283,155 @@ function AgendaContent() {
                 </a>
               )}
             </aside>
+          )}
+
+          {/* ========================================================= */}
+          {/* 8.1 MODAL DE OPÇÕES DE ENVIO: HORÁRIO VS FICHA DE TREINO  */}
+          {/* ========================================================= */}
+          {sharingClass && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm p-4 animate-fade-in">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/60">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                      <MessageCircle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-zinc-100 text-base">
+                        Enviar para o Aluno
+                      </h3>
+                      <p className="text-xs text-zinc-400">
+                        {sharingClass.student.name} • {formatDateShort(sharingClass.date)} às {sharingClass.startTime}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSharingClass(null)}
+                    className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xl transition"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Opções */}
+                <div className="p-6 space-y-4 overflow-y-auto">
+                  {/* Opção 1: Aviso de Horário */}
+                  <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800/80 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-emerald-400" />
+                      <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+                        1. Confirmar Horário da Aula
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 italic">
+                      "Olá, {sharingClass.student.name.split(" ")[0]}! Confirmando nossa aula dia {formatDateShort(sharingClass.date)} às {sharingClass.startTime}. Nos vemos lá! 💪"
+                    </p>
+                    <a
+                      href={buildWhatsAppLink(
+                        sharingClass.student.phone,
+                        `Olá, ${sharingClass.student.name.split(" ")[0]}! Confirmando nossa aula dia ${formatDateShort(sharingClass.date)} às ${sharingClass.startTime}. Nos vemos lá! 💪`
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setSharingClass(null)}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-emerald-400 font-bold text-xs border border-zinc-700/60 transition"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Enviar Confirmação de Horário</span>
+                    </a>
+                  </div>
+
+                  {/* Opção 2: Ficha de Treino */}
+                  <div className="p-4 rounded-2xl bg-zinc-950 border border-emerald-500/30 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Dumbbell className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                          2. Enviar Ficha de Treino
+                        </span>
+                      </div>
+                      {studentPlansForShare.length > 0 && (
+                        <span className="text-[11px] font-bold text-zinc-400">
+                          {studentPlansForShare.length} ficha(s)
+                        </span>
+                      )}
+                    </div>
+
+                    {loadingStudentPlans ? (
+                      <div className="py-6 text-center text-xs text-zinc-500">
+                        Buscando treinos prescritos do aluno...
+                      </div>
+                    ) : studentPlansForShare.length === 0 ? (
+                      <div className="py-4 text-center space-y-2">
+                        <p className="text-xs text-zinc-400">
+                          Este aluno ainda não possui uma ficha de treino montada.
+                        </p>
+                        <Link
+                          href={`/planos/novo?studentId=${sharingClass.studentId}`}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-zinc-950 font-bold text-xs transition"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Montar Treino Agora</span>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        <p className="text-[11px] text-zinc-400">
+                          Selecione o plano de treino para compartilhar:
+                        </p>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {studentPlansForShare.map((plan) => (
+                            <div
+                              key={plan.id}
+                              className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between gap-3 hover:border-emerald-500/40 transition"
+                            >
+                              <div className="min-w-0">
+                                <h4 className="font-bold text-zinc-100 text-xs truncate">
+                                  {plan.title}
+                                </h4>
+                                <p className="text-[10px] text-zinc-400 mt-0.5">
+                                  {plan.exercises?.length || 0} exercícios • {plan.goal || "Geral"}
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const workoutToShare = {
+                                    ...plan,
+                                    student: {
+                                      name: sharingClass.student.name,
+                                      phone: sharingClass.student.phone,
+                                    },
+                                  };
+                                  setActiveShareWorkout(workoutToShare);
+                                  setSharingClass(null);
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-zinc-950 font-bold text-xs flex items-center gap-1 shrink-0 transition"
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                                <span>Enviar Treino</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal de Envio e Compartilhamento da Ficha */}
+          {activeShareWorkout && (
+            <ShareWorkoutModal
+              isOpen={!!activeShareWorkout}
+              onClose={() => setActiveShareWorkout(null)}
+              workout={activeShareWorkout}
+            />
           )}
 
           {/* ========================================================= */}
