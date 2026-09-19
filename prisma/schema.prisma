@@ -1,0 +1,121 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model TrainerSettings {
+  id              String   @id @default("trainer")
+  name            String   @default("Pedro Personal")
+  pin             String   @default("1234")
+  phone           String?  @default("(11) 99999-8888")
+  pixKey          String?  @default("pedro.personal@email.com")
+  bio             String?  @default("Personal Trainer especialista em hipertrofia e emagrecimento")
+  themePreference String   @default("emerald")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Student {
+  id           String          @id @default(cuid())
+  name         String
+  phone        String
+  email        String?
+  birthDate    String?
+  goal         String          @default("Hipertrofia")
+  planName                String?         @default("Mensalidade Padrão")
+  billingType             String          @default("MONTHLY") // MONTHLY, PER_CLASS, PACKAGE
+  frequency               String?         @default("3x/sem")
+  pricePerSession         Float?          @default(90.0)
+  paymentTiming           String?         @default("POST_CLASS") // PRE_CLASS, POST_CLASS
+  packageTotalClasses     Int?
+  packageRemainingClasses Int?
+  monthlyFee              Float           @default(300.0)
+  dueDay                  Int             @default(10)
+  startDate               String
+  status                  String          @default("ACTIVE") // ACTIVE, INACTIVE
+  notes                   String?
+  avatarUrl               String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  payments     Payment[]
+  classes      ClassSchedule[]
+  workoutPlans WorkoutPlan[]
+
+  @@index([status])
+  @@index([name])
+}
+
+model Payment {
+  id             String   @id @default(cuid())
+  studentId      String
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  amount         Float
+  referenceMonth String   // ex: "09/2026"
+  dueDate        String   // YYYY-MM-DD
+  paidAt         String?  // YYYY-MM-DD
+  status         String   @default("PENDING") // PENDING, PAID, OVERDUE
+  paymentMethod  String?  @default("PIX")
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([referenceMonth])
+  @@index([dueDate])
+  @@index([status])
+}
+
+model ClassSchedule {
+  id               String   @id @default(cuid())
+  studentId        String
+  student          Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title            String?
+  date             String   // YYYY-MM-DD
+  startTime        String   // "08:00"
+  endTime          String   // "09:00"
+  location         String   @default("ACADEMIA") // ACADEMIA, DOMICILIO, ONLINE, OUTRO
+  status           String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
+  notes            String?
+  recurringGroupId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([date])
+  @@index([status])
+}
+
+model WorkoutPlan {
+  id          String            @id @default(cuid())
+  studentId   String
+  student     Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  shareToken  String            @unique @default(uuid())
+  title       String
+  goal        String?
+  notes       String?
+  exercises   WorkoutExercise[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([studentId])
+  @@index([shareToken])
+}
+
+model WorkoutExercise {
+  id            String      @id @default(cuid())
+  workoutPlanId String
+  workoutPlan   WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  order         Int         @default(0)
+  name          String
+  sets          String      @default("3")
+  reps          String      @default("10-12")
+  load          String?
+  restSeconds   Int         @default(60)
+  notes         String?
+
+  @@index([workoutPlanId, order])
+}

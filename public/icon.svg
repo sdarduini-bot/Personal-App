@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="100%" stop-color="#09090b" />
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="120" fill="url(#bgGrad)" />
+  <rect width="512" height="512" rx="120" fill="none" stroke="#10b981" stroke-width="8" opacity="0.3" />
+
+  <!-- Dumbbell Icon -->
+  <g transform="translate(256,256) rotate(-45) translate(-256,-256)" stroke="url(#emeraldGrad)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Center Bar -->
+    <line x1="140" y1="256" x2="372" y2="256" />
+    <!-- Center Grip -->
+    <line x1="220" y1="256" x2="292" y2="256" stroke="#4ade80" stroke-width="38" />
+    <!-- Left Inner Weight -->
+    <line x1="140" y1="180" x2="140" y2="332" stroke-width="36" />
+    <!-- Left Outer Weight -->
+    <line x1="95" y1="200" x2="95" y2="312" stroke-width="32" />
+    <!-- Right Inner Weight -->
+    <line x1="372" y1="180" x2="372" y2="332" stroke-width="36" />
+    <!-- Right Outer Weight -->
+    <line x1="417" y1="200" x2="417" y2="312" stroke-width="32" />
+  </g>
+
+  <!-- Fitness spark / dot -->
+  <circle cx="410" cy="100" r="16" fill="#4ade80" />
+</svg>
