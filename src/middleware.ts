@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
     if (!isValid) {
       const unauthResponse = NextResponse.json(
         {
-          error: "Acesso não autorizado. Autentique-se com o PIN mestre.",
+          error: "Acesso não autorizado. Faça login para continuar.",
           authenticated: false,
         },
         { status: 401 }
@@ -49,6 +49,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.json).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|pdf)$).*)",
   ],
 };

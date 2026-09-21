@@ -33,9 +33,32 @@ const TrainerContext = createContext<TrainerContextType>({
 });
 
 export function TrainerProvider({ children }: { children: React.ReactNode }) {
-  const [trainer, setTrainer] = useState<TrainerUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
+  const [trainer, setTrainer] = useState<TrainerUser | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("trainer_session_cache");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return null;
+  });
+
+  const [authenticated, setAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return Boolean(localStorage.getItem("trainer_session_cache"));
+      } catch {}
+    }
+    return false;
+  });
+
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      // Se já temos cache, não bloqueamos a interface
+      return !Boolean(localStorage.getItem("trainer_session_cache"));
+    }
+    return true;
+  });
 
   const fetchTrainer = async () => {
     try {
@@ -44,13 +67,18 @@ export function TrainerProvider({ children }: { children: React.ReactNode }) {
       if (data.authenticated && data.trainer) {
         setTrainer(data.trainer);
         setAuthenticated(true);
+        try {
+          localStorage.setItem("trainer_session_cache", JSON.stringify(data.trainer));
+        } catch {}
       } else {
         setTrainer(null);
         setAuthenticated(false);
+        try {
+          localStorage.removeItem("trainer_session_cache");
+        } catch {}
       }
     } catch {
-      setTrainer(null);
-      setAuthenticated(false);
+      // Se falhar rede temporariamente mas já temos cache, mantemos
     } finally {
       setLoading(false);
     }
@@ -62,12 +90,17 @@ export function TrainerProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("trainer_session_cache");
+        sessionStorage.clear();
+      }
       await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // prosseguir com logout local
+    } finally {
       setTrainer(null);
       setAuthenticated(false);
-      window.location.href = "/login";
-    } catch {
-      window.location.href = "/login";
+      window.location.replace("/login");
     }
   };
 

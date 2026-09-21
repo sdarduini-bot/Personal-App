@@ -195,10 +195,13 @@ export async function isAdminSession(): Promise<boolean> {
   return !!trainer && trainer.role === "ADMIN";
 }
 
+let hasVerifiedAdmin = false;
+
 /**
  * Garante a existência de uma conta de Administrador no banco de dados
  */
 export async function ensureAdminAccount() {
+  if (hasVerifiedAdmin) return;
   try {
     const adminExists = await prisma.trainer.findFirst({
       where: { role: "ADMIN" },
@@ -220,6 +223,7 @@ export async function ensureAdminAccount() {
         },
       });
     }
+    hasVerifiedAdmin = true;
   } catch (err) {
     console.error("Erro ao verificar conta admin:", err);
   }
