@@ -39,3 +39,5 @@ prisma/*.db-journal
 *.db-journal
 .env
 .env.local
+# manter prisma/.env commitado (dummy DATABASE_URL para build)
+!prisma/.env
