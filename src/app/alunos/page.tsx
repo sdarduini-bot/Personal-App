@@ -48,6 +48,7 @@ interface StudentItem {
   dueDay: number;
   startDate: string;
   status: string;
+  avatarUrl?: string | null;
   notes: string | null;
   payments?: Array<{
     id: string;
@@ -315,8 +316,17 @@ function AlunosContent() {
                       {/* Topo do Card */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-zinc-800 border border-zinc-700/60 flex items-center justify-center text-zinc-200 font-bold text-lg group-hover:border-emerald-500/50 group-hover:text-emerald-400 transition shrink-0">
-                            {student.name.charAt(0).toUpperCase()}
+                          <div className="w-12 h-12 rounded-2xl bg-zinc-800 border border-zinc-700/60 flex items-center justify-center text-zinc-200 font-bold text-lg group-hover:border-emerald-500/50 group-hover:text-emerald-400 transition shrink-0 overflow-hidden">
+                            {student.avatarUrl ? (
+                              <img
+                                src={student.avatarUrl}
+                                alt={student.name}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              student.name.charAt(0).toUpperCase()
+                            )}
                           </div>
                           <div>
                             <h3 className="font-bold text-zinc-100 text-sm group-hover:text-emerald-400 transition">

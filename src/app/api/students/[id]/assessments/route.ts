@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateBodyComposition, AssessmentInput } from "@/lib/bodyComposition";
+import { randomUUID } from "crypto";
 
 export async function GET(
   req: Request,
@@ -9,6 +10,11 @@ export async function GET(
   try {
     const assessments = await prisma.physicalAssessment.findMany({
       where: { studentId: params.id },
+      include: {
+        photos: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
       orderBy: { date: "desc" },
     });
 
@@ -71,6 +77,8 @@ export async function POST(
       rightCalf,
       leftCalf,
       notes,
+      photos,
+      photoToken,
     } = body;
 
     if (!weight || !height) {
@@ -168,6 +176,24 @@ export async function POST(
         sumFolds: results.sumFolds,
         bodyDensity: results.bodyDensity,
         notes: notes || null,
+        photoToken: photoToken || `foto-${randomUUID().substring(0, 8)}`,
+        ...(Array.isArray(photos) && photos.length > 0
+          ? {
+              photos: {
+                create: photos
+                  .filter((p: any) => p?.url && p?.type)
+                  .map((p: any) => ({
+                    type: p.type,
+                    url: p.url,
+                    thumbnailUrl: p.thumbnailUrl || null,
+                    notes: p.notes || null,
+                  })),
+              },
+            }
+          : {}),
+      },
+      include: {
+        photos: true,
       },
     });
 

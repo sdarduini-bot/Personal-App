@@ -12,6 +12,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/classes") ||
     pathname.startsWith("/api/workouts") ||
     pathname.startsWith("/api/dashboard") ||
+    pathname.startsWith("/api/upload") ||
     pathname.startsWith("/api/settings");
 
   if (isPrivateApi) {
@@ -39,7 +40,7 @@ export async function middleware(request: NextRequest) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  response.headers.set("Permissions-Policy", "camera=(self), microphone=(), geolocation=()");
 
   return response;
 }

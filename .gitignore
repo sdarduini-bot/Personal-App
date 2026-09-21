@@ -27,3 +27,7 @@ test-*.js
 
 # typescript
 *.tsbuildinfo
+
+# uploads de midia
+/public/uploads/*
+!/public/uploads/**/.gitkeep

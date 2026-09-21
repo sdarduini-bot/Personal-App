@@ -35,6 +35,7 @@ import {
   Zap,
   Package,
   Activity,
+  Camera,
 } from "lucide-react";
 import {
   formatCurrency,
@@ -46,6 +47,8 @@ import { clearCache } from "@/lib/cache";
 import AssessmentModal from "@/components/AssessmentModal";
 import AssessmentHistoryChart from "@/components/AssessmentHistoryChart";
 import { buildAssessmentWhatsAppText } from "@/lib/bodyComposition";
+import AvatarUploadModal from "@/components/AvatarUploadModal";
+import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 
 const FREQUENCY_PRESETS = [
   { freq: "1x/sem", fee: "180", name: "Presencial 1x/sem" },
@@ -82,6 +85,7 @@ interface StudentFull {
   startDate: string;
   status: string;
   notes: string | null;
+  avatarUrl?: string | null;
   stats: {
     totalPaid: number;
     totalPending: number;
@@ -171,6 +175,14 @@ interface StudentFull {
     sumFolds?: number | null;
     bodyDensity?: number | null;
     notes?: string | null;
+    photoToken?: string | null;
+    photos?: Array<{
+      id: string;
+      type: string;
+      url: string;
+      thumbnailUrl?: string | null;
+      notes?: string | null;
+    }>;
     createdAt: string;
   }>;
 }
@@ -187,6 +199,10 @@ export default function StudentDetailPage() {
   // Modal de avaliação física
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
   const [selectedAssessmentToEdit, setSelectedAssessmentToEdit] = useState<any | null>(null);
+
+  // Modais de fotos e evolução
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [isBeforeAfterOpen, setIsBeforeAfterOpen] = useState(false);
 
   // Modal de compartilhamento de treino
   const [selectedWorkout, setSelectedWorkout] = useState<any | null>(null);
@@ -474,6 +490,18 @@ export default function StudentDetailPage() {
     window.open(link, "_blank");
   };
 
+  // Solicitar fotos da avaliação ao aluno via WhatsApp (Link Mágico)
+  const handleRequestPhotosWhatsApp = (assessment: any) => {
+    if (!student) return;
+    const token = assessment.photoToken;
+    if (!token) return;
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const linkFotos = `${origin}/fotos/${token}`;
+    const msg = `Olá ${student.name.split(" ")[0]}! 📸\n\nAqui está seu link seguro para enviar as fotos da avaliação física de ${formatDateShort(assessment.date)}:\n\n👉 ${linkFotos}\n\nLembre-se de apoiar o celular na altura da cintura e manter boa iluminação! Suas fotos ficam salvas de forma 100% privada.`;
+    const link = buildWhatsAppLink(student.phone, msg);
+    window.open(link, "_blank");
+  };
+
   // Excluir aluno
   const handleDeleteStudent = async () => {
     if (!confirm(`Tem certeza que deseja excluir ${student?.name}? Isso removerá histórico e treinos.`)) {
@@ -520,10 +548,28 @@ export default function StudentDetailPage() {
                 {/* 1. BANNER PRINCIPAL DO ALUNO */}
                 <div className="p-6 rounded-3xl bg-zinc-900/90 border border-zinc-800 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex items-start sm:items-center gap-4">
-                    <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-emerald-600 to-emerald-400 p-0.5 shadow-md shadow-emerald-500/20 shrink-0">
-                      <div className="w-full h-full bg-zinc-900 rounded-[22px] flex items-center justify-center text-xl font-bold text-emerald-400">
-                        {student.name.charAt(0).toUpperCase()}
+                    <div className="relative group shrink-0">
+                      <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-emerald-600 to-emerald-400 p-0.5 shadow-md shadow-emerald-500/20 overflow-hidden">
+                        <div className="w-full h-full bg-zinc-900 rounded-[22px] flex items-center justify-center text-xl font-bold text-emerald-400 overflow-hidden">
+                          {student.avatarUrl ? (
+                            <img
+                              src={student.avatarUrl}
+                              alt={student.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            student.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsAvatarModalOpen(true)}
+                        className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-md transition active:scale-95"
+                        title="Alterar foto do aluno"
+                      >
+                        <Camera className="w-3 h-3 stroke-[2.5]" />
+                      </button>
                     </div>
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -1225,6 +1271,27 @@ export default function StudentDetailPage() {
                       </div>
 
                       <div className="flex items-center gap-2.5 flex-wrap">
+                        {student.assessments && student.assessments.some((a) => a.photos && a.photos.length > 0) && (
+                          <button
+                            type="button"
+                            onClick={() => setIsBeforeAfterOpen(true)}
+                            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-emerald-400 font-bold text-xs transition border border-zinc-700/80 active:scale-95 shadow-sm"
+                          >
+                            <Sparkles className="w-4 h-4" />
+                            <span>Antes & Depois</span>
+                          </button>
+                        )}
+                        {student.assessments && student.assessments.length > 0 && student.assessments[0].photoToken && (
+                          <button
+                            type="button"
+                            onClick={() => handleRequestPhotosWhatsApp(student.assessments![0])}
+                            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs transition border border-zinc-700/80 active:scale-95 shadow-sm"
+                            title="Enviar link seguro para o aluno mandar fotos"
+                          >
+                            <Camera className="w-4 h-4 text-emerald-400" />
+                            <span>Pedir Fotos (WhatsApp)</span>
+                          </button>
+                        )}
                         {student.assessments && student.assessments.length > 0 && (
                           <button
                             type="button"
@@ -1480,6 +1547,52 @@ export default function StudentDetailPage() {
                                   {latest.notes}
                                 </div>
                               )}
+
+                              {/* Fotos da Avaliação (se houver) */}
+                              {latest.photos && latest.photos.length > 0 && (
+                                <div className="bg-zinc-950/60 p-4 rounded-2xl border border-zinc-800/80 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                                      <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                                      Fotos de Acompanhamento ({latest.photos.length})
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsBeforeAfterOpen(true)}
+                                      className="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                                    >
+                                      <Sparkles className="w-3 h-3" />
+                                      <span>Comparar com Anteriores</span>
+                                    </button>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                    {latest.photos.map((p) => (
+                                      <div
+                                        key={p.id || p.url}
+                                        className="relative aspect-[3/4] rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 group cursor-pointer"
+                                        onClick={() => setIsBeforeAfterOpen(true)}
+                                      >
+                                        <img
+                                          src={p.url}
+                                          alt={p.type}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                          loading="lazy"
+                                        />
+                                        <span className="absolute bottom-1.5 left-1.5 bg-black/80 backdrop-blur-sm text-[10px] font-bold text-zinc-200 px-2 py-0.5 rounded-md border border-zinc-700/50">
+                                          {p.type === "FRONT"
+                                            ? "Frente"
+                                            : p.type === "BACK"
+                                            ? "Costas"
+                                            : p.type === "RIGHT_SIDE"
+                                            ? "Perfil D."
+                                            : "Perfil E."}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })()}
@@ -1503,8 +1616,14 @@ export default function StudentDetailPage() {
                                       #{student.assessments!.length - idx}
                                     </div>
                                     <div>
-                                      <span className="font-bold text-zinc-200 block">
-                                        {formatDateLong(item.date)}
+                                      <span className="font-bold text-zinc-200 flex items-center gap-2">
+                                        <span>{formatDateLong(item.date)}</span>
+                                        {item.photos && item.photos.length > 0 && (
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md border border-emerald-500/20">
+                                            <Camera className="w-3 h-3" />
+                                            {item.photos.length} fotos
+                                          </span>
+                                        )}
                                       </span>
                                       <span className="text-[11px] text-zinc-500">
                                         Peso: {item.weight.toFixed(1)} kg • Altura: {item.height.toFixed(2)} m
@@ -2196,6 +2315,36 @@ export default function StudentDetailPage() {
                 latestAssessment={student.assessments && student.assessments.length > 0 ? student.assessments[0] : null}
                 assessmentToEdit={selectedAssessmentToEdit}
               />
+            )}
+
+            {/* MODAL DE FOTO DE IDENTIFICAÇÃO (AVATAR) */}
+            {student && (
+              <AvatarUploadModal
+                isOpen={isAvatarModalOpen}
+                onClose={() => setIsAvatarModalOpen(false)}
+                onSuccess={(newAvatarUrl) => {
+                  setStudent((prev) =>
+                    prev ? { ...prev, avatarUrl: newAvatarUrl } : null
+                  );
+                  clearCache("/api/students");
+                }}
+                studentId={studentId}
+                studentName={student.name}
+                currentAvatarUrl={student.avatarUrl}
+              />
+            )}
+
+            {/* MODAL / VISUALIZADOR ANTES E DEPOIS */}
+            {isBeforeAfterOpen && student && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+                <div className="w-full max-w-3xl max-h-[95vh] overflow-y-auto">
+                  <BeforeAfterSlider
+                    studentName={student.name}
+                    assessments={student.assessments || []}
+                    onClose={() => setIsBeforeAfterOpen(false)}
+                  />
+                </div>
+              </div>
             )}
           </main>
         </div>

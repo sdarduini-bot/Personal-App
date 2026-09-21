@@ -24,6 +24,11 @@ export async function GET(
           orderBy: { createdAt: "desc" },
         },
         assessments: {
+          include: {
+            photos: {
+              orderBy: { createdAt: "asc" },
+            },
+          },
           orderBy: { date: "desc" },
         },
       },

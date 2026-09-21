@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateBodyComposition, AssessmentInput } from "@/lib/bodyComposition";
+import { deleteUploadedFile } from "@/lib/storage";
 
 export async function GET(
   req: Request,
@@ -9,7 +10,12 @@ export async function GET(
   try {
     const assessment = await prisma.physicalAssessment.findUnique({
       where: { id: params.id },
-      include: { student: true },
+      include: {
+        student: true,
+        photos: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
     });
 
     if (!assessment) {
@@ -154,7 +160,37 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(updated);
+    if (Array.isArray(body.photos)) {
+      // Se novas fotos foram fornecidas na edição
+      await prisma.assessmentPhoto.deleteMany({
+        where: { assessmentId: params.id },
+      });
+
+      if (body.photos.length > 0) {
+        await prisma.assessmentPhoto.createMany({
+          data: body.photos
+            .filter((p: any) => p?.url && p?.type)
+            .map((p: any) => ({
+              assessmentId: params.id,
+              type: p.type,
+              url: p.url,
+              thumbnailUrl: p.thumbnailUrl || null,
+              notes: p.notes || null,
+            })),
+        });
+      }
+    }
+
+    const finalAssessment = await prisma.physicalAssessment.findUnique({
+      where: { id: params.id },
+      include: {
+        photos: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
+
+    return NextResponse.json(finalAssessment || updated);
   } catch (error) {
     console.error("Erro ao atualizar avaliação física:", error);
     return NextResponse.json({ error: "Erro ao atualizar avaliação" }, { status: 500 });
@@ -166,6 +202,20 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const existing = await prisma.physicalAssessment.findUnique({
+      where: { id: params.id },
+      include: { photos: true },
+    });
+
+    if (existing?.photos) {
+      for (const photo of existing.photos) {
+        await deleteUploadedFile(photo.url);
+        if (photo.thumbnailUrl) {
+          await deleteUploadedFile(photo.thumbnailUrl);
+        }
+      }
+    }
+
     await prisma.physicalAssessment.delete({
       where: { id: params.id },
     });

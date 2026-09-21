@@ -13,7 +13,9 @@ import {
   User,
   Calendar,
   Layers,
+  Camera,
 } from "lucide-react";
+import AssessmentPhotoUploader, { PhotoItem } from "@/components/AssessmentPhotoUploader";
 import {
   calculateBodyComposition,
   calculateAgeFromBirthDate,
@@ -99,6 +101,7 @@ export default function AssessmentModal({
   const [leftCalf, setLeftCalf] = useState<string>("");
 
   const [notes, setNotes] = useState<string>("");
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [saving, setSaving] = useState(false);
 
   // Inicializar dados ao abrir o modal
@@ -140,8 +143,10 @@ export default function AssessmentModal({
       setRightCalf(assessmentToEdit.rightCalf != null ? String(assessmentToEdit.rightCalf) : "");
       setLeftCalf(assessmentToEdit.leftCalf != null ? String(assessmentToEdit.leftCalf) : "");
       setNotes(assessmentToEdit.notes || "");
+      setPhotos(assessmentToEdit.photos || []);
     } else {
       // Nova Avaliação
+      setPhotos([]);
       const initialAge = calculateAgeFromBirthDate(studentBirthDate);
       setAge(String(initialAge));
       setGender((studentGender as GenderType) || "FEMALE");
@@ -290,6 +295,7 @@ export default function AssessmentModal({
         rightCalf: rightCalf ? parseFloat(rightCalf) : null,
         leftCalf: leftCalf ? parseFloat(leftCalf) : null,
         notes,
+        photos,
       };
 
       const url = assessmentToEdit
@@ -720,6 +726,24 @@ export default function AssessmentModal({
                 ))}
               </div>
             )}
+          </div>
+
+          {/* SEÇÃO: FOTOS DE EVOLUÇÃO CORPORAL (PREMIUM) */}
+          <div className="bg-zinc-950/80 border border-zinc-800/90 rounded-2xl p-4 space-y-3">
+            <div className="border-b border-zinc-800/80 pb-2 flex items-center justify-between">
+              <span className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Camera className="w-4 h-4" />
+                ACOMPANHAMENTO FOTOGRÁFICO (4 POSES)
+              </span>
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                Premium
+              </span>
+            </div>
+            <AssessmentPhotoUploader
+              photos={photos}
+              onChange={setPhotos}
+              disabled={saving}
+            />
           </div>
 
           {/* SEÇÃO 3: RESULTADOS CALCULADOS AO VIVO (CONFORME PRINT) */}
