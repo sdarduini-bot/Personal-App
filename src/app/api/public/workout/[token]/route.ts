@@ -14,6 +14,13 @@ export async function GET(
             id: true,
             name: true,
             goal: true,
+            trainer: {
+              select: {
+                name: true,
+                phone: true,
+                bio: true,
+              },
+            },
           },
         },
         exercises: {
@@ -26,18 +33,15 @@ export async function GET(
       return NextResponse.json({ error: "Plano de treino não encontrado ou link expirado." }, { status: 404 });
     }
 
-    const trainer = await prisma.trainerSettings.findUnique({
-      where: { id: "trainer" },
-      select: {
-        name: true,
-        phone: true,
-        bio: true,
-      },
-    });
+    const trainer = plan.student?.trainer || {
+      name: "Personal Trainer",
+      phone: "",
+      bio: "",
+    };
 
     return NextResponse.json({
       plan,
-      trainer: trainer || { name: "Pedro Personal Trainer" },
+      trainer,
     });
   } catch (error) {
     console.error("Erro ao buscar plano público:", error);

@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export async function GET(req: Request) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
     const url = new URL(req.url);
     const studentId = url.searchParams.get("studentId");
 
-    const whereClause: { studentId?: string } = {};
+    const whereClause: any = {
+      student: { trainerId: trainer.id },
+    };
     if (studentId) whereClause.studentId = studentId;
 
     const plans = await prisma.workoutPlan.findMany({
@@ -28,6 +36,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
     const data = await req.json();
 
     if (!data.studentId || !data.title) {
@@ -35,6 +48,14 @@ export async function POST(req: Request) {
         { error: "Aluno e título do plano são obrigatórios" },
         { status: 400 }
       );
+    }
+
+    const student = await prisma.student.findFirst({
+      where: { id: data.studentId, trainerId: trainer.id },
+    });
+
+    if (!student) {
+      return NextResponse.json({ error: "Aluno não encontrado" }, { status: 404 });
     }
 
     const shareToken = `treino-${randomUUID().substring(0, 8)}`;

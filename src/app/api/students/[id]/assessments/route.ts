@@ -2,12 +2,26 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateBodyComposition, AssessmentInput } from "@/lib/bodyComposition";
 import { randomUUID } from "crypto";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const student = await prisma.student.findFirst({
+      where: { id: params.id, trainerId: trainer.id },
+    });
+
+    if (!student) {
+      return NextResponse.json({ error: "Aluno não encontrado" }, { status: 404 });
+    }
+
     const assessments = await prisma.physicalAssessment.findMany({
       where: { studentId: params.id },
       include: {
@@ -33,11 +47,16 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
     const body = await req.json();
     const studentId = params.id;
 
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
+    const student = await prisma.student.findFirst({
+      where: { id: studentId, trainerId: trainer.id },
     });
 
     if (!student) {

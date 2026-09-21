@@ -1,13 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const plan = await prisma.workoutPlan.findUnique({
-      where: { id: params.id },
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const plan = await prisma.workoutPlan.findFirst({
+      where: {
+        id: params.id,
+        student: { trainerId: trainer.id },
+      },
       include: {
         student: true,
         exercises: { orderBy: { order: "asc" } },
@@ -29,6 +38,22 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const existing = await prisma.workoutPlan.findFirst({
+      where: {
+        id: params.id,
+        student: { trainerId: trainer.id },
+      },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Plano não encontrado" }, { status: 404 });
+    }
+
     const data = await req.json();
 
     // Se novos exercícios forem enviados, substituir na transação
@@ -84,6 +109,22 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const existing = await prisma.workoutPlan.findFirst({
+      where: {
+        id: params.id,
+        student: { trainerId: trainer.id },
+      },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Plano não encontrado" }, { status: 404 });
+    }
+
     await prisma.workoutPlan.delete({
       where: { id: params.id },
     });

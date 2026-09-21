@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { TrainerProvider } from "@/contexts/TrainerContext";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Pedro Personal Trainer | Gestão de Alunos & Treinos",
-  description: "Sistema exclusivo do Personal Trainer para gestão de alunos, agenda, finanças e planos de treino.",
+  title: "Personal Trainer Pro | Gestão de Alunos, Avaliações & Treinos",
+  description: "Plataforma completa para Personal Trainers gerenciarem alunos, agenda, composição corporal e planos de treino.",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Pedro PT",
+    title: "Personal Pro",
   },
 };
 
@@ -44,7 +45,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark theme-emerald">
       <body className={`${inter.variable} font-sans min-h-screen bg-zinc-950 text-zinc-100 flex flex-col`}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <TrainerProvider>{children}</TrainerProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

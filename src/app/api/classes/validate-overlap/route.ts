@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export async function POST(req: Request) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
     const { date, startTime, endTime, excludeClassId } = await req.json();
 
     if (!date || !startTime || !endTime) {
@@ -15,6 +21,7 @@ export async function POST(req: Request) {
     const whereClause: any = {
       date,
       status: { not: "CANCELED" },
+      student: { trainerId: trainer.id },
       AND: [
         { startTime: { lt: endTime } },
         { endTime: { gt: startTime } },

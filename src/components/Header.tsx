@@ -2,7 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { Dumbbell, Lock, Settings } from "lucide-react";
+import { Dumbbell, Lock, Settings, Sparkles } from "lucide-react";
+import { useTrainer } from "@/contexts/TrainerContext";
 
 interface HeaderProps {
   title?: string;
@@ -10,14 +11,7 @@ interface HeaderProps {
 }
 
 export default function Header({ title, subtitle }: HeaderProps) {
-  const handleLock = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      window.location.reload();
-    } catch {
-      window.location.reload();
-    }
-  };
+  const { trainer, logout } = useTrainer();
 
   return (
     <header
@@ -33,14 +27,24 @@ export default function Header({ title, subtitle }: HeaderProps) {
             </div>
           </div>
           <div>
-            <h1 className="text-base md:text-xl font-bold text-zinc-100 tracking-tight">
-              {title || "Pedro Personal"}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base md:text-xl font-bold text-zinc-100 tracking-tight">
+                {title || trainer?.name || "Personal Trainer"}
+              </h1>
+              {trainer?.subscriptionStatus === "TRIAL" && (
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-800/60 text-emerald-400 text-[10px] font-semibold">
+                  <Sparkles className="w-3 h-3" />
+                  <span>Trial: {trainer.trialDaysRemaining ?? 14}d</span>
+                </span>
+              )}
+            </div>
             {subtitle ? (
               <p className="text-xs text-zinc-400">{subtitle}</p>
             ) : (
               <p className="text-[11px] text-emerald-400 font-medium md:hidden">
-                Gestão do Treinador
+                {trainer?.subscriptionStatus === "TRIAL"
+                  ? `Teste Grátis (${trainer.trialDaysRemaining ?? 14} dias restantes)`
+                  : "Painel do Treinador"}
               </p>
             )}
           </div>
@@ -58,12 +62,12 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
           <button
             type="button"
-            onClick={handleLock}
+            onClick={logout}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-rose-950/40 text-zinc-300 hover:text-rose-400 border border-zinc-800 transition text-xs font-medium"
-            title="Bloquear aplicativo"
+            title="Encerrar sessão"
           >
             <Lock className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Bloquear</span>
+            <span className="hidden sm:inline">Sair</span>
           </button>
         </div>
       </div>

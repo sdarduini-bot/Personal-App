@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_EXERCISES } from "@/lib/exercises-seed";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
     const search = searchParams.get("search");
+
+    const trainer = await getTrainerSession();
 
     // Se o banco estiver vazio, popula automaticamente com os 120+ exercícios padrão
     const totalCount = await prisma.exerciseCatalog.count();
@@ -17,18 +20,31 @@ export async function GET(req: Request) {
           category: ex.category,
           muscleGroup: ex.muscleGroup || null,
           isCustom: false,
+          trainerId: null,
         })),
       });
     }
 
-    const where: any = {};
+    const where: any = {
+      OR: [
+        { trainerId: null },
+        ...(trainer ? [{ trainerId: trainer.id }] : []),
+      ],
+    };
+
     if (category && category !== "Todos") {
       where.category = category;
     }
+
     if (search && search.trim()) {
-      where.OR = [
-        { name: { contains: search.trim() } },
-        { muscleGroup: { contains: search.trim() } },
+      const searchTerm = search.trim();
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: searchTerm } },
+            { muscleGroup: { contains: searchTerm } },
+          ],
+        },
       ];
     }
 
@@ -46,6 +62,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { name, category, muscleGroup } = body;
 
@@ -59,6 +80,7 @@ export async function POST(req: Request) {
 
     const created = await prisma.exerciseCatalog.create({
       data: {
+        trainerId: trainer.id,
         name: name.trim(),
         category: category.trim(),
         muscleGroup: muscleGroup?.trim() || null,

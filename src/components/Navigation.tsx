@@ -12,7 +12,9 @@ import {
   Settings,
   Lock,
   ListOrdered,
+  Sparkles,
 } from "lucide-react";
+import { useTrainer } from "@/contexts/TrainerContext";
 
 interface NavItem {
   name: string;
@@ -31,15 +33,7 @@ const navItems: NavItem[] = [
 
 export default function Navigation() {
   const pathname = usePathname();
-
-  const handleLock = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      window.location.reload();
-    } catch {
-      window.location.reload();
-    }
-  };
+  const { trainer, logout } = useTrainer();
 
   return (
     <>
@@ -52,12 +46,21 @@ export default function Navigation() {
               <Dumbbell className="w-5 h-5 text-emerald-400" />
             </div>
           </div>
-          <div>
-            <h2 className="font-bold text-sm text-zinc-100 tracking-tight">Pedro Personal</h2>
-            <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Painel do Treinador
-            </span>
+          <div className="overflow-hidden">
+            <h2 className="font-bold text-sm text-zinc-100 tracking-tight truncate">
+              {trainer?.name || "Personal Trainer"}
+            </h2>
+            {trainer?.subscriptionStatus === "TRIAL" ? (
+              <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-emerald-400 shrink-0" />
+                <span>Trial: {trainer.trialDaysRemaining ?? 14}d</span>
+              </span>
+            ) : (
+              <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Painel do Treinador
+              </span>
+            )}
           </div>
         </div>
 
@@ -106,11 +109,11 @@ export default function Navigation() {
 
           <button
             type="button"
-            onClick={handleLock}
+            onClick={logout}
             className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-rose-400 hover:bg-rose-950/30 transition text-left"
           >
             <Lock className="w-4 h-4 text-rose-400" />
-            <span>Bloquear App</span>
+            <span>Sair da Conta</span>
           </button>
         </div>
       </aside>

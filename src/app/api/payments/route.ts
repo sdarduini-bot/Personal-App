@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export async function GET(req: Request) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
     const url = new URL(req.url);
     const month = url.searchParams.get("month"); // formato MM/YYYY
     const status = url.searchParams.get("status"); // ALL, PAID, PENDING, OVERDUE
@@ -12,7 +18,10 @@ export async function GET(req: Request) {
       referenceMonth?: string;
       status?: string;
       studentId?: string;
-    } = {};
+      student?: { trainerId: string };
+    } = {
+      student: { trainerId: trainer.id },
+    };
 
     if (month && month !== "ALL") {
       whereClause.referenceMonth = month;
@@ -58,20 +67,25 @@ export async function GET(req: Request) {
       } else {
         totalPending += p.amount;
         if (p.dueDate < todayStr) {
-          currentStatus = "OVERDUE";
           totalOverdue += p.amount;
+          currentStatus = "OVERDUE";
         }
       }
-      return { ...p, calculatedStatus: currentStatus };
+
+      return {
+        ...p,
+        status: currentStatus,
+      };
     });
 
     return NextResponse.json({
       payments: updatedPayments,
       summary: {
-        totalBilled: totalPaid + totalPending,
         totalPaid,
         totalPending,
         totalOverdue,
+        totalExpected: totalPaid + totalPending,
+        count: payments.length,
       },
     });
   } catch (error) {
@@ -82,6 +96,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
     const data = await req.json();
 
     if (!data.studentId || !data.amount || !data.dueDate) {
@@ -91,10 +110,18 @@ export async function POST(req: Request) {
       );
     }
 
+    // Verificar se o aluno pertence a este professor
+    const student = await prisma.student.findFirst({
+      where: { id: data.studentId, trainerId: trainer.id },
+    });
+
+    if (!student) {
+      return NextResponse.json({ error: "Aluno não encontrado ou não pertence a você" }, { status: 404 });
+    }
+
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-    // Determinar mês de referência caso não enviado
     let refMonth = data.referenceMonth;
     if (!refMonth) {
       const parts = data.dueDate.split("-");

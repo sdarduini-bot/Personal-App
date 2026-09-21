@@ -11,6 +11,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/payments") ||
     pathname.startsWith("/api/classes") ||
     pathname.startsWith("/api/workouts") ||
+    pathname.startsWith("/api/assessments") ||
+    pathname.startsWith("/api/exercises") ||
     pathname.startsWith("/api/dashboard") ||
     pathname.startsWith("/api/upload") ||
     pathname.startsWith("/api/settings");

@@ -21,8 +21,11 @@ import {
   Zap,
 } from "lucide-react";
 
+import { useTrainer } from "@/contexts/TrainerContext";
+
 export default function ConfiguracoesPage() {
   const { theme, setTheme } = useTheme();
+  const { trainer, refreshTrainer } = useTrainer();
 
   const [form, setForm] = useState({
     name: "",
@@ -92,6 +95,7 @@ export default function ConfiguracoesPage() {
       if (res.ok) {
         setSuccessMessage("Configurações atualizadas com sucesso!");
         setForm((prev) => ({ ...prev, newPin: "", confirmPin: "" }));
+        await refreshTrainer();
         setTimeout(() => setSuccessMessage(""), 4000);
       } else {
         const data = await res.json();
@@ -165,6 +169,34 @@ export default function ConfiguracoesPage() {
               <div className="py-20 text-center text-zinc-500 text-xs">Carregando...</div>
             ) : (
               <form onSubmit={handleSave} className="space-y-6">
+                {/* 0. STATUS DA ASSINATURA SAAS */}
+                {trainer && (
+                  <div className="bg-gradient-to-r from-emerald-950/40 via-zinc-900/80 to-zinc-900/80 border border-emerald-800/40 rounded-3xl p-6 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <h3 className="font-bold text-zinc-100 text-base">
+                            Sua Assinatura: {trainer.subscriptionStatus === "TRIAL" ? "Período de Teste Grátis" : "Plano Pro Ativo"}
+                          </h3>
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-1">
+                          Conta vinculada ao e-mail: <strong className="text-zinc-200">{trainer.email}</strong>
+                        </p>
+                      </div>
+
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-300 text-xs font-semibold self-start sm:self-auto">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>
+                          {trainer.subscriptionStatus === "TRIAL"
+                            ? `${trainer.trialDaysRemaining ?? 14} dias restantes no Trial`
+                            : "Acesso Total Ilimitado"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* 1. SELETOR DE PALETAS DE CORES (BRAINSTORMING) */}
                 <div className="bg-zinc-900/80 border border-zinc-800 rounded-3xl p-6 space-y-4">
                   <div className="flex items-center gap-2.5 pb-2 border-b border-zinc-800">

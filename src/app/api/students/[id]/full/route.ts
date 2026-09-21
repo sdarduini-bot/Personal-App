@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const student = await prisma.student.findUnique({
-      where: { id: params.id },
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const student = await prisma.student.findFirst({
+      where: { id: params.id, trainerId: trainer.id },
       include: {
         payments: {
           orderBy: { dueDate: "desc" },

@@ -17,8 +17,15 @@ function bufferToHex(buffer: ArrayBuffer): string {
     .join("");
 }
 
-export async function createWebSessionToken(): Promise<string> {
+export async function createWebSessionToken(trainer?: {
+  id: string;
+  email: string;
+  name: string;
+}): Promise<string> {
   const payload = JSON.stringify({
+    trainerId: trainer?.id || "trainer_pedro",
+    email: trainer?.email || "pedro@personal.com",
+    name: trainer?.name || "Pedro Personal",
     role: "trainer",
     createdAt: Date.now(),
     nonce: Math.random().toString(36).substring(2),

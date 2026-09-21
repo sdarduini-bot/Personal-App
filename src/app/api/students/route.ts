@@ -1,16 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export async function GET(req: Request) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
     const url = new URL(req.url);
     const search = url.searchParams.get("search") || "";
     const status = url.searchParams.get("status") || "ALL";
 
     const whereClause: {
+      trainerId: string;
       name?: { contains: string };
       status?: string;
-    } = {};
+    } = {
+      trainerId: trainer.id,
+    };
 
     if (search.trim()) {
       whereClause.name = { contains: search.trim() };
@@ -58,6 +67,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
     const data = await req.json();
 
     if (!data.name || !data.phone) {
@@ -79,6 +93,7 @@ export async function POST(req: Request) {
 
     const student = await prisma.student.create({
       data: {
+        trainerId: trainer.id,
         name: data.name.trim(),
         phone: data.phone.trim(),
         email: data.email?.trim() || null,

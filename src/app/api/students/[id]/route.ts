@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const student = await prisma.student.findUnique({
-      where: { id: params.id },
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const student = await prisma.student.findFirst({
+      where: { id: params.id, trainerId: trainer.id },
     });
 
     if (!student) {
@@ -25,6 +31,19 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const existing = await prisma.student.findFirst({
+      where: { id: params.id, trainerId: trainer.id },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Aluno não encontrado ou não pertence a você" }, { status: 404 });
+    }
+
     const data = await req.json();
 
     const student = await prisma.student.update({
@@ -64,6 +83,19 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const existing = await prisma.student.findFirst({
+      where: { id: params.id, trainerId: trainer.id },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Aluno não encontrado" }, { status: 404 });
+    }
+
     await prisma.student.delete({
       where: { id: params.id },
     });

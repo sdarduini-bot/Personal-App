@@ -2,14 +2,23 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateBodyComposition, AssessmentInput } from "@/lib/bodyComposition";
 import { deleteUploadedFile } from "@/lib/storage";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const assessment = await prisma.physicalAssessment.findUnique({
-      where: { id: params.id },
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const assessment = await prisma.physicalAssessment.findFirst({
+      where: {
+        id: params.id,
+        student: { trainerId: trainer.id },
+      },
       include: {
         student: true,
         photos: {
@@ -34,9 +43,17 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
     const body = await req.json();
-    const existing = await prisma.physicalAssessment.findUnique({
-      where: { id: params.id },
+    const existing = await prisma.physicalAssessment.findFirst({
+      where: {
+        id: params.id,
+        student: { trainerId: trainer.id },
+      },
     });
 
     if (!existing) {
@@ -202,10 +219,22 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const existing = await prisma.physicalAssessment.findUnique({
-      where: { id: params.id },
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const existing = await prisma.physicalAssessment.findFirst({
+      where: {
+        id: params.id,
+        student: { trainerId: trainer.id },
+      },
       include: { photos: true },
     });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Avaliação não encontrada" }, { status: 404 });
+    }
 
     if (existing?.photos) {
       for (const photo of existing.photos) {

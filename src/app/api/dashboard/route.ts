@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
+    const trainer = await getTrainerSession();
+    if (!trainer) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
     const url = new URL(req.url);
     const dateParam = url.searchParams.get("date");
 
@@ -16,7 +22,7 @@ export async function GET(req: Request) {
     const todayStr = dateParam || `${currentYear}-${currentMonthNum}-${currentDayNum}`;
     const currentMonthRef = `${currentMonthNum}/${currentYear}`;
 
-    // Executar todas as consultas em paralelo para máxima performance
+    // Executar todas as consultas em paralelo para máxima performance, isoladas por professor
     const [
       totalStudents,
       todayClasses,
@@ -24,14 +30,17 @@ export async function GET(req: Request) {
       pastOverdue,
       recentStudents,
     ] = await Promise.all([
-      // 1. Total de alunos ativos
+      // 1. Total de alunos ativos deste professor
       prisma.student.count({
-        where: { status: "ACTIVE" },
+        where: { status: "ACTIVE", trainerId: trainer.id },
       }),
 
-      // 2. Aulas de hoje com projeção restrita de campos
+      // 2. Aulas de hoje deste professor
       prisma.classSchedule.findMany({
-        where: { date: todayStr },
+        where: {
+          date: todayStr,
+          student: { trainerId: trainer.id },
+        },
         select: {
           id: true,
           title: true,
@@ -47,9 +56,12 @@ export async function GET(req: Request) {
         orderBy: { startTime: "asc" },
       }),
 
-      // 3. Pagamentos do mês
+      // 3. Pagamentos do mês dos alunos deste professor
       prisma.payment.findMany({
-        where: { referenceMonth: currentMonthRef },
+        where: {
+          referenceMonth: currentMonthRef,
+          student: { trainerId: trainer.id },
+        },
         select: {
           id: true,
           amount: true,
@@ -69,6 +81,7 @@ export async function GET(req: Request) {
           status: { in: ["OVERDUE", "PENDING"] },
           referenceMonth: { not: currentMonthRef },
           dueDate: { lt: todayStr },
+          student: { trainerId: trainer.id },
         },
         select: {
           id: true,
@@ -83,9 +96,9 @@ export async function GET(req: Request) {
         take: 10,
       }),
 
-      // 5. Últimos alunos cadastrados
+      // 5. Últimos alunos cadastrados deste professor
       prisma.student.findMany({
-        where: { status: "ACTIVE" },
+        where: { status: "ACTIVE", trainerId: trainer.id },
         orderBy: { createdAt: "desc" },
         take: 5,
         select: {
@@ -145,6 +158,11 @@ export async function GET(req: Request) {
     return NextResponse.json({
       todayStr,
       currentMonthRef,
+      trainer: {
+        id: trainer.id,
+        name: trainer.name,
+        subscriptionStatus: trainer.subscriptionStatus,
+      },
       metrics: {
         totalStudents,
         todayClassesCount: todayClasses.length,

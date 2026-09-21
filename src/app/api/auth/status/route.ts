@@ -1,34 +1,39 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { prisma } from "@/lib/prisma";
-import { verifySessionToken } from "@/lib/auth-security";
+import { getTrainerSession } from "@/lib/auth-trainer";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const cookieStore = cookies();
-    const session = cookieStore.get("pedro_pt_session");
+    const trainer = await getTrainerSession();
 
-    const authenticated = await verifySessionToken(session?.value);
-
-    let trainer = null;
-    if (authenticated) {
-      trainer = await prisma.trainerSettings.findUnique({
-        where: { id: "trainer" },
-        select: {
-          name: true,
-          phone: true,
-          pixKey: true,
-          bio: true,
-          themePreference: true,
-        },
+    if (!trainer) {
+      return NextResponse.json({
+        authenticated: false,
+        trainer: null,
       });
     }
 
+    let trialDaysRemaining: number | null = null;
+    if (trainer.trialEndsAt) {
+      const diffMs = new Date(trainer.trialEndsAt).getTime() - Date.now();
+      trialDaysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    }
+
     return NextResponse.json({
-      authenticated,
-      trainer,
+      authenticated: true,
+      trainer: {
+        id: trainer.id,
+        name: trainer.name,
+        email: trainer.email,
+        phone: trainer.phone,
+        pixKey: trainer.pixKey,
+        bio: trainer.bio,
+        themePreference: trainer.themePreference,
+        subscriptionStatus: trainer.subscriptionStatus,
+        trialEndsAt: trainer.trialEndsAt,
+        trialDaysRemaining,
+      },
     });
   } catch (error) {
     console.error("Erro status auth:", error);

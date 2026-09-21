@@ -19,8 +19,28 @@ model TrainerSettings {
   updatedAt       DateTime @updatedAt
 }
 
+model Trainer {
+  id                 String             @id @default(cuid())
+  name               String             @default("Pedro Personal")
+  email              String             @unique
+  passwordHash       String
+  phone              String?            @default("(11) 99999-8888")
+  pixKey             String?            @default("pedro.personal@email.com")
+  bio                String?            @default("Personal Trainer especialista em hipertrofia e emagrecimento")
+  themePreference    String             @default("emerald")
+  subscriptionStatus String             @default("TRIAL") // TRIAL, ACTIVE, PAST_DUE, CANCELLED
+  trialEndsAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  students           Student[]
+  classes            ClassSchedule[]
+  exercises          ExerciseCatalog[]
+}
+
 model Student {
   id           String          @id @default(cuid())
+  trainerId    String          @default("trainer_pedro")
+  trainer      Trainer?        @relation(fields: [trainerId], references: [id], onDelete: Cascade)
   name         String
   phone        String
   email        String?
@@ -47,6 +67,7 @@ model Student {
   workoutPlans WorkoutPlan[]
   assessments  PhysicalAssessment[]
 
+  @@index([trainerId])
   @@index([status])
   @@index([name])
 }
@@ -73,6 +94,8 @@ model Payment {
 
 model ClassSchedule {
   id               String   @id @default(cuid())
+  trainerId        String?  @default("trainer_pedro")
+  trainer          Trainer? @relation(fields: [trainerId], references: [id], onDelete: Cascade)
   studentId        String
   student          Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   title            String?
@@ -86,6 +109,7 @@ model ClassSchedule {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  @@index([trainerId])
   @@index([studentId])
   @@index([date])
   @@index([status])
@@ -124,6 +148,8 @@ model WorkoutExercise {
 
 model ExerciseCatalog {
   id          String   @id @default(cuid())
+  trainerId   String?
+  trainer     Trainer? @relation(fields: [trainerId], references: [id], onDelete: Cascade)
   name        String
   category    String   // Peito, Costas, Ombros, Bíceps, Tríceps, Quadríceps, Posteriores/Glúteos, Panturrilhas, Abdômen/Core, Cardio/Funcional
   muscleGroup String?
@@ -131,6 +157,7 @@ model ExerciseCatalog {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([trainerId])
   @@index([category])
   @@index([name])
 }
