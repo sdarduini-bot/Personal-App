@@ -38,72 +38,30 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { email, password, pin } = body;
 
-    let trainer = null;
+    const userPassword = password || pin;
 
-    // Cenário A: Login com E-mail + Senha
-    if (email && password) {
-      const cleanEmail = email.toLowerCase().trim();
-      trainer = await prisma.trainer.findUnique({
-        where: { email: cleanEmail },
-      });
-
-      if (!trainer || !verifyPassword(password, trainer.passwordHash)) {
-        const attempt = recordFailedAttempt(ip);
-        return NextResponse.json(
-          {
-            error: attempt.isLocked
-              ? `Acesso bloqueado por ${attempt.lockoutSeconds} segundos devido a tentativas incorretas.`
-              : `E-mail ou senha incorretos. Restam ${attempt.remainingAttempts} tentativas.`,
-            remainingAttempts: attempt.remainingAttempts,
-          },
-          { status: 401 }
-        );
-      }
-    }
-    // Cenário B: Login com PIN (Pedro Personal)
-    else if (pin) {
-      let pedro = await prisma.trainer.findUnique({
-        where: { id: "trainer_pedro" },
-      });
-
-      if (!pedro) {
-        const legacy = await prisma.trainerSettings.findUnique({ where: { id: "trainer" } });
-        if (legacy && (pin === legacy.pin || pin === "1234")) {
-          pedro = await prisma.trainer.create({
-            data: {
-              id: "trainer_pedro",
-              name: legacy.name || "Pedro Personal",
-              email: "pedro@personal.com",
-              passwordHash: legacy.pin,
-              phone: legacy.phone,
-              pixKey: legacy.pixKey,
-              bio: legacy.bio,
-              role: "TRAINER",
-              isActive: true,
-              subscriptionStatus: "ACTIVE",
-            },
-          });
-        }
-      }
-
-      if (!pedro || !verifyPassword(pin, pedro.passwordHash)) {
-        const attempt = recordFailedAttempt(ip);
-        return NextResponse.json(
-          {
-            error: attempt.isLocked
-              ? `Acesso bloqueado temporariamente por ${attempt.lockoutSeconds}s.`
-              : `PIN ou senha incorretos. Restam ${attempt.remainingAttempts} tentativas.`,
-            remainingAttempts: attempt.remainingAttempts,
-          },
-          { status: 401 }
-        );
-      }
-
-      trainer = pedro;
-    } else {
+    if (!email || !userPassword) {
       return NextResponse.json(
         { error: "Informe e-mail e senha para acessar." },
         { status: 400 }
+      );
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const trainer = await prisma.trainer.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!trainer || !verifyPassword(userPassword, trainer.passwordHash)) {
+      const attempt = recordFailedAttempt(ip);
+      return NextResponse.json(
+        {
+          error: attempt.isLocked
+            ? `Acesso bloqueado por ${attempt.lockoutSeconds} segundos devido a tentativas incorretas.`
+            : `E-mail ou senha incorretos. Restam ${attempt.remainingAttempts} tentativas.`,
+          remainingAttempts: attempt.remainingAttempts,
+        },
+        { status: 401 }
       );
     }
 
