@@ -63,6 +63,7 @@ export async function POST(req: Request) {
       trainerId: trainer.id,
       email: trainer.email,
       name: trainer.name,
+      role: trainer.role,
     });
 
     const isProduction = process.env.NODE_ENV === "production";

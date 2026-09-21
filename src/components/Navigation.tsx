@@ -12,7 +12,7 @@ import {
   Settings,
   Lock,
   ListOrdered,
-  Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 import { useTrainer } from "@/contexts/TrainerContext";
 
@@ -33,7 +33,7 @@ const navItems: NavItem[] = [
 
 export default function Navigation() {
   const pathname = usePathname();
-  const { trainer, logout } = useTrainer();
+  const { trainer, isAdmin, logout } = useTrainer();
 
   return (
     <>
@@ -50,10 +50,10 @@ export default function Navigation() {
             <h2 className="font-bold text-sm text-zinc-100 tracking-tight truncate">
               {trainer?.name || "Personal Trainer"}
             </h2>
-            {trainer?.subscriptionStatus === "TRIAL" ? (
-              <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-emerald-400 shrink-0" />
-                <span>Trial: {trainer.trialDaysRemaining ?? 14}d</span>
+            {isAdmin ? (
+              <span className="text-[11px] text-amber-400 font-medium flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                Administrador Mestre
               </span>
             ) : (
               <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5">
@@ -95,6 +95,20 @@ export default function Navigation() {
 
         {/* Rodapé da Sidebar Desktop */}
         <div className="pt-4 border-t border-zinc-800/60 space-y-1">
+          {isAdmin && (
+            <Link
+              href="/configuracoes?tab=acessos"
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition ${
+                pathname === "/configuracoes"
+                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                  : "text-amber-400/90 hover:text-amber-300 hover:bg-amber-950/20"
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>Gestão de Acessos</span>
+            </Link>
+          )}
+
           <Link
             href="/configuracoes"
             className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition ${

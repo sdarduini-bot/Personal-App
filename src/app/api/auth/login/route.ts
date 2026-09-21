@@ -9,6 +9,7 @@ import {
 import {
   verifyPassword,
   createTrainerToken,
+  ensureAdminAccount,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth-trainer";
 
@@ -16,6 +17,8 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
+    await ensureAdminAccount();
+
     const forwardedFor = req.headers.get("x-forwarded-for");
     const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "local_client";
 
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
 
     let trainer = null;
 
-    // Cenário A: Login com E-mail + Senha (SaaS Moderno)
+    // Cenário A: Login com E-mail + Senha
     if (email && password) {
       const cleanEmail = email.toLowerCase().trim();
       trainer = await prisma.trainer.findUnique({
@@ -57,14 +60,13 @@ export async function POST(req: Request) {
         );
       }
     }
-    // Cenário B: Login com PIN legado (Pedro Personal ou retrocompatibilidade)
+    // Cenário B: Login com PIN (Pedro Personal)
     else if (pin) {
       let pedro = await prisma.trainer.findUnique({
         where: { id: "trainer_pedro" },
       });
 
       if (!pedro) {
-        // Se ainda não existia, busca configurações legadas
         const legacy = await prisma.trainerSettings.findUnique({ where: { id: "trainer" } });
         if (legacy && (pin === legacy.pin || pin === "1234")) {
           pedro = await prisma.trainer.create({
@@ -76,6 +78,8 @@ export async function POST(req: Request) {
               phone: legacy.phone,
               pixKey: legacy.pixKey,
               bio: legacy.bio,
+              role: "TRAINER",
+              isActive: true,
               subscriptionStatus: "ACTIVE",
             },
           });
@@ -103,6 +107,14 @@ export async function POST(req: Request) {
       );
     }
 
+    // 2. Verificar se a conta está ativa
+    if (!trainer.isActive) {
+      return NextResponse.json(
+        { error: "Sua conta foi desativada pelo administrador. Entre em contato para reativação." },
+        { status: 403 }
+      );
+    }
+
     // Resetar rate limiting após sucesso
     resetFailedAttempts(ip);
 
@@ -111,6 +123,7 @@ export async function POST(req: Request) {
       trainerId: trainer.id,
       email: trainer.email,
       name: trainer.name,
+      role: trainer.role,
     });
 
     const isProduction = process.env.NODE_ENV === "production";
@@ -130,9 +143,9 @@ export async function POST(req: Request) {
         id: trainer.id,
         name: trainer.name,
         email: trainer.email,
+        role: trainer.role,
+        isActive: trainer.isActive,
         phone: trainer.phone,
-        subscriptionStatus: trainer.subscriptionStatus,
-        trialEndsAt: trainer.trialEndsAt,
       },
     });
   } catch (error) {

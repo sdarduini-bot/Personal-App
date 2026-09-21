@@ -61,6 +61,7 @@ export interface TrainerSessionPayload {
   trainerId: string;
   email: string;
   name: string;
+  role: string;
 }
 
 /**
@@ -69,7 +70,6 @@ export interface TrainerSessionPayload {
 export async function createTrainerToken(payload: TrainerSessionPayload): Promise<string> {
   const fullPayload = JSON.stringify({
     ...payload,
-    role: "trainer",
     createdAt: Date.now(),
     nonce: Math.random().toString(36).substring(2),
   });
@@ -140,6 +140,7 @@ export async function verifyTrainerToken(
         trainerId: data.trainerId || "trainer_pedro",
         email: data.email || "pedro@personal.com",
         name: data.name || "Pedro Personal",
+        role: data.role || "TRAINER",
       },
     };
   } catch {
@@ -165,6 +166,8 @@ export async function getTrainerSession() {
         id: true,
         name: true,
         email: true,
+        role: true,
+        isActive: true,
         phone: true,
         pixKey: true,
         bio: true,
@@ -174,8 +177,50 @@ export async function getTrainerSession() {
       },
     });
 
+    if (!trainer || !trainer.isActive) {
+      return null;
+    }
+
     return trainer;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Verifica se a sessão atual pertence a um Administrador
+ */
+export async function isAdminSession(): Promise<boolean> {
+  const trainer = await getTrainerSession();
+  return !!trainer && trainer.role === "ADMIN";
+}
+
+/**
+ * Garante a existência de uma conta de Administrador no banco de dados
+ */
+export async function ensureAdminAccount() {
+  try {
+    const adminExists = await prisma.trainer.findFirst({
+      where: { role: "ADMIN" },
+    });
+
+    if (!adminExists) {
+      await prisma.trainer.create({
+        data: {
+          id: "trainer_admin",
+          name: "Administrador",
+          email: "admin@personal.com",
+          passwordHash: hashPassword("admin123"),
+          role: "ADMIN",
+          isActive: true,
+          phone: "(11) 99999-9999",
+          pixKey: "admin@personal.com",
+          bio: "Administrador Mestre da Plataforma",
+          themePreference: "emerald",
+        },
+      });
+    }
+  } catch (err) {
+    console.error("Erro ao verificar conta admin:", err);
   }
 }

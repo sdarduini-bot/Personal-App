@@ -6,19 +6,19 @@ export interface TrainerUser {
   id: string;
   name: string;
   email: string;
+  role?: string;
+  isActive?: boolean;
   phone?: string | null;
   pixKey?: string | null;
   bio?: string | null;
   themePreference?: string;
-  subscriptionStatus: "TRIAL" | "ACTIVE" | "PAST_DUE" | "CANCELLED";
-  trialEndsAt?: string | null;
-  trialDaysRemaining?: number | null;
 }
 
 interface TrainerContextType {
   trainer: TrainerUser | null;
   loading: boolean;
   authenticated: boolean;
+  isAdmin: boolean;
   refreshTrainer: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -27,6 +27,7 @@ const TrainerContext = createContext<TrainerContextType>({
   trainer: null,
   loading: true,
   authenticated: false,
+  isAdmin: false,
   refreshTrainer: async () => {},
   logout: async () => {},
 });
@@ -70,12 +71,15 @@ export function TrainerProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const isAdmin = trainer?.role === "ADMIN";
+
   return (
     <TrainerContext.Provider
       value={{
         trainer,
         loading,
         authenticated,
+        isAdmin,
         refreshTrainer: fetchTrainer,
         logout,
       }}

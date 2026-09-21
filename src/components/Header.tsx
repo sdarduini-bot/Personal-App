@@ -11,7 +11,7 @@ interface HeaderProps {
 }
 
 export default function Header({ title, subtitle }: HeaderProps) {
-  const { trainer, logout } = useTrainer();
+  const { trainer, isAdmin, logout } = useTrainer();
 
   return (
     <header
@@ -31,10 +31,9 @@ export default function Header({ title, subtitle }: HeaderProps) {
               <h1 className="text-base md:text-xl font-bold text-zinc-100 tracking-tight">
                 {title || trainer?.name || "Personal Trainer"}
               </h1>
-              {trainer?.subscriptionStatus === "TRIAL" && (
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-800/60 text-emerald-400 text-[10px] font-semibold">
-                  <Sparkles className="w-3 h-3" />
-                  <span>Trial: {trainer.trialDaysRemaining ?? 14}d</span>
+              {isAdmin && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-700/60 text-amber-400 text-[10px] font-semibold">
+                  <span>Administrador</span>
                 </span>
               )}
             </div>
@@ -42,9 +41,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
               <p className="text-xs text-zinc-400">{subtitle}</p>
             ) : (
               <p className="text-[11px] text-emerald-400 font-medium md:hidden">
-                {trainer?.subscriptionStatus === "TRIAL"
-                  ? `Teste Grátis (${trainer.trialDaysRemaining ?? 14} dias restantes)`
-                  : "Painel do Treinador"}
+                {isAdmin ? "Painel de Controle Mestre" : "Painel do Treinador"}
               </p>
             )}
           </div>

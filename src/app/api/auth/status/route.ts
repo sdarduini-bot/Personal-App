@@ -14,25 +14,18 @@ export async function GET() {
       });
     }
 
-    let trialDaysRemaining: number | null = null;
-    if (trainer.trialEndsAt) {
-      const diffMs = new Date(trainer.trialEndsAt).getTime() - Date.now();
-      trialDaysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-    }
-
     return NextResponse.json({
       authenticated: true,
       trainer: {
         id: trainer.id,
         name: trainer.name,
         email: trainer.email,
+        role: trainer.role,
+        isActive: trainer.isActive,
         phone: trainer.phone,
         pixKey: trainer.pixKey,
         bio: trainer.bio,
         themePreference: trainer.themePreference,
-        subscriptionStatus: trainer.subscriptionStatus,
-        trialEndsAt: trainer.trialEndsAt,
-        trialDaysRemaining,
       },
     });
   } catch (error) {

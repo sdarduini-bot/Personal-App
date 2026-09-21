@@ -271,15 +271,9 @@ export default function PinModal({ onSuccess }: PinModalProps) {
           </form>
         )}
 
-        {/* Link para Cadastro */}
-        <div className="mt-6 pt-4 border-t border-zinc-800/80 w-full">
-          <Link
-            href="/cadastro"
-            className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-emerald-400 transition font-medium"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Não tem conta? <strong>Teste 14 dias grátis</strong></span>
-          </Link>
+        {/* Rodapé informativo */}
+        <div className="mt-6 pt-4 border-t border-zinc-800/80 w-full text-[11px] text-zinc-500">
+          Acesso exclusivo para treinadores convidados.
         </div>
       </div>
     </div>

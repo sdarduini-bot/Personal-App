@@ -24,11 +24,13 @@ model Trainer {
   name               String             @default("Pedro Personal")
   email              String             @unique
   passwordHash       String
+  role               String             @default("TRAINER") // "ADMIN", "TRAINER"
+  isActive           Boolean            @default(true)
   phone              String?            @default("(11) 99999-8888")
   pixKey             String?            @default("pedro.personal@email.com")
   bio                String?            @default("Personal Trainer especialista em hipertrofia e emagrecimento")
   themePreference    String             @default("emerald")
-  subscriptionStatus String             @default("TRIAL") // TRIAL, ACTIVE, PAST_DUE, CANCELLED
+  subscriptionStatus String             @default("ACTIVE") // ACTIVE, INACTIVE
   trialEndsAt        DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt

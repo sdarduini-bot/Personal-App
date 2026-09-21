@@ -298,16 +298,10 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Link para Cadastro */}
+          {/* Rodapé informativo */}
           <div className="mt-6 pt-5 border-t border-zinc-800 text-center">
             <p className="text-xs text-zinc-400">
-              Ainda não tem conta de treinador?{" "}
-              <Link
-                href="/cadastro"
-                className="font-semibold text-emerald-400 hover:text-emerald-300 transition"
-              >
-                Cadastre-se grátis (14 dias)
-              </Link>
+              Acesso exclusivo para treinadores convidados e administradores.
             </p>
           </div>
         </div>
