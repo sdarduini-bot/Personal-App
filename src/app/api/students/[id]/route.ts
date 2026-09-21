@@ -48,6 +48,7 @@ export async function PUT(
         status: data.status,
         notes: data.notes?.trim() || null,
         avatarUrl: data.avatarUrl || null,
+        gender: data.gender !== undefined ? data.gender : undefined,
       },
     });
 

@@ -23,6 +23,9 @@ export async function GET(
           },
           orderBy: { createdAt: "desc" },
         },
+        assessments: {
+          orderBy: { date: "desc" },
+        },
       },
     });
 
@@ -50,6 +53,7 @@ export async function GET(
         completedClasses,
         scheduledClasses,
         totalWorkoutPlans: student.workoutPlans.length,
+        totalAssessments: student.assessments.length,
       },
     });
   } catch (error) {

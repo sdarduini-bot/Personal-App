@@ -34,6 +34,7 @@ import {
   CheckCheck,
   Zap,
   Package,
+  Activity,
 } from "lucide-react";
 import {
   formatCurrency,
@@ -42,6 +43,9 @@ import {
   buildWhatsAppLink,
 } from "@/lib/formatters";
 import { clearCache } from "@/lib/cache";
+import AssessmentModal from "@/components/AssessmentModal";
+import AssessmentHistoryChart from "@/components/AssessmentHistoryChart";
+import { buildAssessmentWhatsAppText } from "@/lib/bodyComposition";
 
 const FREQUENCY_PRESETS = [
   { freq: "1x/sem", fee: "180", name: "Presencial 1x/sem" },
@@ -123,6 +127,52 @@ interface StudentFull {
       notes: string | null;
     }>;
   }>;
+  gender?: string | null;
+  assessments?: Array<{
+    id: string;
+    date: string;
+    protocol: string;
+    gender: string;
+    age: number;
+    weight: number;
+    height: number;
+    targetBodyFat: number;
+    subscapular?: number | null;
+    chest?: number | null;
+    suprailiac?: number | null;
+    thigh?: number | null;
+    triceps?: number | null;
+    midaxillary?: number | null;
+    abdominal?: number | null;
+    directBodyFat?: number | null;
+    neck?: number | null;
+    shoulders?: number | null;
+    chestCirc?: number | null;
+    waist?: number | null;
+    abdomenCirc?: number | null;
+    hip?: number | null;
+    rightArmRelaxed?: number | null;
+    leftArmRelaxed?: number | null;
+    rightArmContracted?: number | null;
+    leftArmContracted?: number | null;
+    rightForearm?: number | null;
+    leftForearm?: number | null;
+    rightThigh?: number | null;
+    leftThigh?: number | null;
+    rightCalf?: number | null;
+    leftCalf?: number | null;
+    bodyFatPercent: number;
+    fatMass: number;
+    leanMass: number;
+    idealWeight: number;
+    excessWeight: number;
+    imc?: number | null;
+    rcq?: number | null;
+    sumFolds?: number | null;
+    bodyDensity?: number | null;
+    notes?: string | null;
+    createdAt: string;
+  }>;
 }
 
 export default function StudentDetailPage() {
@@ -132,7 +182,11 @@ export default function StudentDetailPage() {
 
   const [student, setStudent] = useState<StudentFull | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"dados" | "financeiro" | "agenda" | "treinos">("dados");
+  const [activeTab, setActiveTab] = useState<"dados" | "financeiro" | "agenda" | "treinos" | "avaliacoes">("dados");
+
+  // Modal de avaliação física
+  const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
+  const [selectedAssessmentToEdit, setSelectedAssessmentToEdit] = useState<any | null>(null);
 
   // Modal de compartilhamento de treino
   const [selectedWorkout, setSelectedWorkout] = useState<any | null>(null);
@@ -160,6 +214,7 @@ export default function StudentDetailPage() {
     packageTotalValue: "800",
     status: "ACTIVE",
     notes: "",
+    gender: "MALE",
   });
 
   // Modal nova cobrança
@@ -221,6 +276,7 @@ export default function StudentDetailPage() {
       phone: student.phone || "",
       email: student.email || "",
       birthDate: student.birthDate ? student.birthDate.split("T")[0] : "",
+      gender: student.gender || "MALE",
       goal: student.goal || "Hipertrofia",
       billingType: (student.billingType as any) || "MONTHLY",
       frequency: student.frequency || "3x/sem",
@@ -377,6 +433,47 @@ export default function StudentDetailPage() {
     }
   };
 
+  // Excluir avaliação física
+  const handleDeleteAssessment = async (assessmentId: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta avaliação física? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/assessments/${assessmentId}`, { method: "DELETE" });
+      if (res.ok) {
+        clearCache("/api/students");
+        fetchStudent();
+      } else {
+        alert("Erro ao excluir avaliação.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Falha de conexão ao excluir avaliação.");
+    }
+  };
+
+  // Compartilhar avaliação via WhatsApp
+  const handleShareAssessmentWhatsApp = (assessment: any) => {
+    if (!student) return;
+    const sorted = [...(student.assessments || [])].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    const currentIndex = sorted.findIndex((a) => a.id === assessment.id);
+    const prev = currentIndex > 0 ? sorted[currentIndex - 1] : null;
+
+    const message = buildAssessmentWhatsAppText(
+      student.name,
+      assessment.date,
+      assessment,
+      assessment.weight,
+      prev,
+      "Pedro Personal"
+    );
+
+    const link = buildWhatsAppLink(student.phone, message);
+    window.open(link, "_blank");
+  };
+
   // Excluir aluno
   const handleDeleteStudent = async () => {
     if (!confirm(`Tem certeza que deseja excluir ${student?.name}? Isso removerá histórico e treinos.`)) {
@@ -492,6 +589,14 @@ export default function StudentDetailPage() {
                         {student.stats.totalWorkoutPlans}
                       </span>
                     </div>
+                    {student.assessments && student.assessments.length > 0 && (
+                      <div className="px-4 py-2.5 rounded-2xl bg-zinc-950 border border-zinc-800 text-center flex-1 sm:flex-initial">
+                        <span className="text-[10px] text-zinc-500 block uppercase font-bold">Gordura Atual</span>
+                        <span className="text-sm font-black text-emerald-400 font-mono">
+                          {student.assessments[0].bodyFatPercent.toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -499,6 +604,12 @@ export default function StudentDetailPage() {
                 <div className="flex border-b border-zinc-800 overflow-x-auto scrollbar-none">
                   {[
                     { id: "dados", label: "Dados e Anamnese", icon: Users },
+                    {
+                      id: "avaliacoes",
+                      label: "Composição & Avaliações",
+                      icon: Activity,
+                      badge: student.assessments && student.assessments.length > 0 ? student.assessments.length : null,
+                    },
                     { id: "financeiro", label: "Situação Financeira", icon: Wallet },
                     { id: "agenda", label: "Agenda de Aulas", icon: Calendar },
                     { id: "treinos", label: "Planos de Treino", icon: Dumbbell },
@@ -518,6 +629,11 @@ export default function StudentDetailPage() {
                       >
                         <Icon className="w-4 h-4" />
                         <span>{tab.label}</span>
+                        {tab.badge != null && (
+                          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500/20 text-emerald-400 font-mono">
+                            {tab.badge}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -1088,6 +1204,359 @@ export default function StudentDetailPage() {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ABA 5: AVALIAÇÕES FÍSICAS E COMPOSIÇÃO CORPORAL */}
+                {activeTab === "avaliacoes" && (
+                  <div className="space-y-6">
+                    {/* Topo da Aba com Ações */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/60 p-5 rounded-3xl border border-zinc-800">
+                      <div>
+                        <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                          <Activity className="w-5 h-5 text-emerald-400" />
+                          Composição Corporal & Avaliações
+                        </h3>
+                        <p className="text-xs text-zinc-400 mt-0.5">
+                          Acompanhamento de dobras cutâneas, perimetria, % de gordura e metas.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        {student.assessments && student.assessments.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleShareAssessmentWhatsApp(student.assessments![0])}
+                            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-emerald-400 font-bold text-xs transition border border-zinc-700/80 active:scale-95"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            <span>WhatsApp</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedAssessmentToEdit(null);
+                            setIsAssessmentModalOpen(true);
+                          }}
+                          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs transition shadow-lg shadow-emerald-500/20 active:scale-95"
+                        >
+                          <Plus className="w-4 h-4 stroke-[3]" />
+                          <span>Nova Avaliação</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Conteúdo: Se não houver avaliações */}
+                    {(!student.assessments || student.assessments.length === 0) ? (
+                      <div className="bg-zinc-900/70 border border-zinc-800 rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-4">
+                        <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                          <Activity className="w-8 h-8" />
+                        </div>
+                        <div className="max-w-md">
+                          <h4 className="text-base font-bold text-zinc-200">
+                            Nenhuma avaliação física cadastrada
+                          </h4>
+                          <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                            Comece a registrar as medidas e dobras cutâneas de {student.name}. Os resultados de % de gordura, massas magra e gorda são calculados instantaneamente!
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedAssessmentToEdit(null);
+                            setIsAssessmentModalOpen(true);
+                          }}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs shadow-md shadow-emerald-500/20 transition active:scale-95"
+                        >
+                          <Plus className="w-4 h-4 stroke-[3]" />
+                          <span>Fazer 1ª Avaliação Física</span>
+                        </button>
+                      </div>
+                    ) : (
+                      /* Se houver avaliações */
+                      <div className="space-y-6">
+                        {/* 1. GRÁFICO HISTÓRICO E EVOLUTIVO */}
+                        <AssessmentHistoryChart
+                          assessments={student.assessments}
+                          targetBodyFat={student.assessments[0]?.targetBodyFat}
+                        />
+
+                        {/* 2. CARD DETALHADO DA ÚLTIMA AVALIAÇÃO */}
+                        {(() => {
+                          const latest = student.assessments[0];
+                          const protocolLabels: Record<string, string> = {
+                            POLLOCK_7: "Pollock (7 dobras)",
+                            POLLOCK_3: "Pollock (3 dobras)",
+                            GUEDES_3: "Guedes (3 dobras)",
+                            BIOIMPEDANCE: "Bioimpedância Direta",
+                            WELTMAN: "Weltman (Obesos)",
+                          };
+
+                          return (
+                            <div className="bg-zinc-900/80 border border-zinc-800 rounded-3xl p-6 space-y-5">
+                              {/* Topo da Última Avaliação */}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-zinc-800">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
+                                    <Activity className="w-5 h-5" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="text-sm font-bold text-zinc-200">
+                                        Última Avaliação: {formatDateLong(latest.date)}
+                                      </h4>
+                                      <span className="text-[10px] font-semibold bg-zinc-800 text-emerald-400 px-2 py-0.5 rounded-md">
+                                        {protocolLabels[latest.protocol] || latest.protocol}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-zinc-400 mt-0.5">
+                                      Idade informada: {latest.age} anos • Sexo:{" "}
+                                      {latest.gender === "MALE" ? "Masculino" : "Feminino"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 self-end sm:self-auto">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleShareAssessmentWhatsApp(latest)}
+                                    className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-emerald-400 transition"
+                                    title="Enviar no WhatsApp"
+                                  >
+                                    <MessageCircle className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedAssessmentToEdit(latest);
+                                      setIsAssessmentModalOpen(true);
+                                    }}
+                                    className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 transition"
+                                    title="Editar Avaliação"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteAssessment(latest.id)}
+                                    className="p-2 rounded-xl bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition"
+                                    title="Excluir Avaliação"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Grade de Resultados Físicos */}
+                              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                                <div className="bg-zinc-950/70 p-3 rounded-2xl border border-zinc-800/80">
+                                  <span className="text-[10px] text-zinc-500 block uppercase font-bold">
+                                    % Gordura
+                                  </span>
+                                  <span className="text-lg font-black text-emerald-400 font-mono mt-0.5 block">
+                                    {latest.bodyFatPercent.toFixed(2)}%
+                                  </span>
+                                </div>
+
+                                <div className="bg-zinc-950/70 p-3 rounded-2xl border border-zinc-800/80">
+                                  <span className="text-[10px] text-zinc-500 block uppercase font-bold">
+                                    Meta Gordura
+                                  </span>
+                                  <span className="text-lg font-black text-cyan-400 font-mono mt-0.5 block">
+                                    {latest.targetBodyFat.toFixed(2)}%
+                                  </span>
+                                </div>
+
+                                <div className="bg-zinc-950/70 p-3 rounded-2xl border border-zinc-800/80">
+                                  <span className="text-[10px] text-zinc-500 block uppercase font-bold">
+                                    Peso Magro
+                                  </span>
+                                  <span className="text-lg font-black text-cyan-400 font-mono mt-0.5 block">
+                                    {latest.leanMass.toFixed(2)} kg
+                                  </span>
+                                </div>
+
+                                <div className="bg-zinc-950/70 p-3 rounded-2xl border border-zinc-800/80">
+                                  <span className="text-[10px] text-zinc-500 block uppercase font-bold">
+                                    Peso Gordo
+                                  </span>
+                                  <span className="text-lg font-black text-amber-400 font-mono mt-0.5 block">
+                                    {latest.fatMass.toFixed(2)} kg
+                                  </span>
+                                </div>
+
+                                <div className="bg-zinc-950/70 p-3 rounded-2xl border border-zinc-800/80">
+                                  <span className="text-[10px] text-zinc-500 block uppercase font-bold">
+                                    Peso Ideal
+                                  </span>
+                                  <span className="text-lg font-black text-zinc-200 font-mono mt-0.5 block">
+                                    {latest.idealWeight.toFixed(2)} kg
+                                  </span>
+                                </div>
+
+                                <div className="bg-zinc-950/70 p-3 rounded-2xl border border-zinc-800/80">
+                                  <span className="text-[10px] text-zinc-500 block uppercase font-bold">
+                                    IMC
+                                  </span>
+                                  <span className="text-lg font-black text-zinc-200 font-mono mt-0.5 block">
+                                    {latest.imc ? latest.imc.toFixed(2) : "--"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Dobras Cutâneas (mm) */}
+                              <div className="bg-zinc-950/50 p-4 rounded-2xl border border-zinc-800/80">
+                                <span className="text-xs font-bold text-zinc-300 block mb-2.5">
+                                  Dobras Cutâneas (mm)
+                                </span>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 text-xs">
+                                  {[
+                                    { label: "Subescapular", val: latest.subscapular },
+                                    { label: "Peitoral", val: latest.chest },
+                                    { label: "Supra-ilíaca", val: latest.suprailiac },
+                                    { label: "Coxa", val: latest.thigh },
+                                    { label: "Tricipital", val: latest.triceps },
+                                    { label: "Axilar-média", val: latest.midaxillary },
+                                    { label: "Abdominal", val: latest.abdominal },
+                                  ].map((d) => (
+                                    <div
+                                      key={d.label}
+                                      className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-center"
+                                    >
+                                      <span className="text-[10px] text-zinc-500 block truncate">
+                                        {d.label}
+                                      </span>
+                                      <span className="text-xs font-bold text-emerald-400 font-mono mt-0.5 block">
+                                        {d.val != null ? `${d.val.toFixed(1)} mm` : "--"}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Perimetria Corporal (se preenchida) */}
+                              {(latest.waist || latest.abdomenCirc || latest.hip || latest.chestCirc || latest.rightArmRelaxed) && (
+                                <div className="bg-zinc-950/50 p-4 rounded-2xl border border-zinc-800/80">
+                                  <span className="text-xs font-bold text-zinc-300 block mb-2.5">
+                                    Perimetria Corporal (cm)
+                                  </span>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
+                                    {[
+                                      { label: "Abdômen", val: latest.abdomenCirc },
+                                      { label: "Cintura", val: latest.waist },
+                                      { label: "Quadril", val: latest.hip },
+                                      { label: "Tórax", val: latest.chestCirc },
+                                      { label: "Braço D (rel)", val: latest.rightArmRelaxed },
+                                      { label: "Braço E (rel)", val: latest.leftArmRelaxed },
+                                      { label: "Coxa D", val: latest.rightThigh },
+                                      { label: "Coxa E", val: latest.leftThigh },
+                                      { label: "Panturrilha D", val: latest.rightCalf },
+                                      { label: "Panturrilha E", val: latest.leftCalf },
+                                    ]
+                                      .filter((c) => c.val != null)
+                                      .map((c) => (
+                                        <div
+                                          key={c.label}
+                                          className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-center"
+                                        >
+                                          <span className="text-[10px] text-zinc-500 block truncate">
+                                            {c.label}
+                                          </span>
+                                          <span className="text-xs font-bold text-cyan-400 font-mono mt-0.5 block">
+                                            {c.val?.toFixed(1)} cm
+                                          </span>
+                                        </div>
+                                      ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {latest.notes && (
+                                <div className="text-xs text-zinc-400 bg-zinc-950/40 p-3 rounded-xl border border-zinc-800/60">
+                                  <strong className="text-zinc-300">Notas: </strong>
+                                  {latest.notes}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {/* 3. HISTÓRICO DE TODAS AS AVALIAÇÕES */}
+                        {student.assessments.length > 1 && (
+                          <div className="bg-zinc-900/70 border border-zinc-800 rounded-3xl p-6">
+                            <h4 className="text-sm font-bold text-zinc-200 mb-4 flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-emerald-400" />
+                              Histórico Completo de Avaliações ({student.assessments.length})
+                            </h4>
+
+                            <div className="space-y-2.5">
+                              {student.assessments.map((item, idx) => (
+                                <div
+                                  key={item.id}
+                                  className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center font-mono font-bold text-zinc-400">
+                                      #{student.assessments!.length - idx}
+                                    </div>
+                                    <div>
+                                      <span className="font-bold text-zinc-200 block">
+                                        {formatDateLong(item.date)}
+                                      </span>
+                                      <span className="text-[11px] text-zinc-500">
+                                        Peso: {item.weight.toFixed(1)} kg • Altura: {item.height.toFixed(2)} m
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                      <span className="text-xs font-black text-emerald-400 font-mono block">
+                                        {item.bodyFatPercent.toFixed(1)}% Gordura
+                                      </span>
+                                      <span className="text-[10px] text-zinc-500">
+                                        Massa Magra: {item.leanMass.toFixed(1)} kg
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleShareAssessmentWhatsApp(item)}
+                                        className="p-1.5 rounded-lg text-zinc-400 hover:text-emerald-400 hover:bg-zinc-900 transition"
+                                        title="WhatsApp"
+                                      >
+                                        <MessageCircle className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedAssessmentToEdit(item);
+                                          setIsAssessmentModalOpen(true);
+                                        }}
+                                        className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition"
+                                        title="Editar"
+                                      >
+                                        <Edit className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteAssessment(item.id)}
+                                        className="p-1.5 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-zinc-900 transition"
+                                        title="Excluir"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1705,6 +2174,27 @@ export default function StudentDetailPage() {
                 isOpen={!!selectedWorkout}
                 onClose={() => setSelectedWorkout(null)}
                 workout={selectedWorkout}
+              />
+            )}
+
+            {/* MODAL DE COMPOSIÇÃO CORPORAL & AVALIAÇÃO FÍSICA */}
+            {student && (
+              <AssessmentModal
+                isOpen={isAssessmentModalOpen}
+                onClose={() => {
+                  setIsAssessmentModalOpen(false);
+                  setSelectedAssessmentToEdit(null);
+                }}
+                onSuccess={() => {
+                  clearCache("/api/students");
+                  fetchStudent();
+                }}
+                studentId={studentId}
+                studentName={student.name}
+                studentBirthDate={student.birthDate}
+                studentGender={student.gender}
+                latestAssessment={student.assessments && student.assessments.length > 0 ? student.assessments[0] : null}
+                assessmentToEdit={selectedAssessmentToEdit}
               />
             )}
           </main>

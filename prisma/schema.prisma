@@ -39,11 +39,13 @@ model Student {
   status                  String          @default("ACTIVE") // ACTIVE, INACTIVE
   notes                   String?
   avatarUrl               String?
+  gender                  String?         @default("MALE") // MALE, FEMALE
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   payments     Payment[]
   classes      ClassSchedule[]
   workoutPlans WorkoutPlan[]
+  assessments  PhysicalAssessment[]
 
   @@index([status])
   @@index([name])
@@ -131,5 +133,68 @@ model ExerciseCatalog {
 
   @@index([category])
   @@index([name])
+}
+
+model PhysicalAssessment {
+  id                 String   @id @default(cuid())
+  studentId          String
+  student            Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date               String   // YYYY-MM-DD
+  protocol           String   @default("POLLOCK_7") // POLLOCK_7, POLLOCK_3, GUEDES_3, BIOIMPEDANCE, WELTMAN
+  gender             String   @default("MALE")      // MALE, FEMALE
+  age                Int      @default(25)
+
+  // Medidas Gerais
+  weight             Float    // kg
+  height             Float    // m
+  targetBodyFat      Float    // %
+
+  // Dobras Cutâneas (mm)
+  subscapular        Float?
+  chest              Float?
+  suprailiac         Float?
+  thigh              Float?
+  triceps            Float?
+  midaxillary        Float?
+  abdominal          Float?
+
+  // Bioimpedância direta
+  directBodyFat      Float?
+
+  // Circunferências / Perimetria (cm)
+  neck               Float?
+  shoulders          Float?
+  chestCirc          Float?
+  waist              Float?
+  abdomenCirc        Float?
+  hip                Float?
+  rightArmRelaxed    Float?
+  leftArmRelaxed     Float?
+  rightArmContracted Float?
+  leftArmContracted  Float?
+  rightForearm       Float?
+  leftForearm        Float?
+  rightThigh         Float?
+  leftThigh          Float?
+  rightCalf          Float?
+  leftCalf           Float?
+
+  // Resultados Calculados
+  bodyFatPercent     Float
+  fatMass            Float
+  leanMass           Float
+  idealWeight        Float
+  excessWeight       Float
+  imc                Float?
+  rcq                Float?
+  sumFolds           Float?
+  bodyDensity        Float?
+
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([date])
 }
 
