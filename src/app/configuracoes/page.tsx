@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 
 import { useTrainer } from "@/contexts/TrainerContext";
-import { formatPhone } from "@/lib/formatters";
+import { formatPhone, sanitizePhone } from "@/lib/formatters";
 
 interface AdminTrainerItem {
   id: string;
@@ -105,8 +105,10 @@ function ConfiguracoesContent() {
   const [inviteResult, setInviteResult] = useState<{
     name: string;
     email: string;
+    phone?: string | null;
     inviteUrl: string;
   } | null>(null);
+  const [invitePhone, setInvitePhone] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
 
   const fetchSettings = async () => {
@@ -252,8 +254,10 @@ function ConfiguracoesContent() {
           setInviteResult({
             name: newTrainerForm.name,
             email: newTrainerForm.email,
+            phone: newTrainerForm.phone,
             inviteUrl: data.inviteUrl,
           });
+          setInvitePhone(formatPhone(newTrainerForm.phone || ""));
           setCopiedLink(false);
         }
         setNewTrainerForm({ name: "", email: "", phone: "", password: "" });
@@ -285,8 +289,10 @@ function ConfiguracoesContent() {
         setInviteResult({
           name: targetTrainer.name,
           email: targetTrainer.email,
+          phone: targetTrainer.phone,
           inviteUrl: data.inviteUrl,
         });
+        setInvitePhone(formatPhone(targetTrainer.phone || ""));
         setCopiedLink(false);
       } else {
         setAdminActionError(data.error || "Erro ao gerar link de convite.");
@@ -1125,9 +1131,31 @@ function ConfiguracoesContent() {
                 </p>
               </div>
 
-              <p className="text-[11px] text-zinc-500">
-                Se o serviço de e-mail estiver configurado, a mensagem já foi enviada. Você também pode enviar o link diretamente pelo WhatsApp agora:
-              </p>
+              {/* Destinatário do WhatsApp */}
+              <div className="pt-1">
+                <label className="text-xs font-semibold text-zinc-300 block mb-1">
+                  Número do WhatsApp do Destinatário
+                </label>
+                <input
+                  type="tel"
+                  placeholder="(11) 98765-4321"
+                  maxLength={15}
+                  value={invitePhone}
+                  onChange={(e) => setInvitePhone(formatPhone(e.target.value))}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 font-mono"
+                />
+                <p className="text-[10px] text-zinc-400 mt-1">
+                  {invitePhone ? (
+                    <span>
+                      O WhatsApp abrirá <strong>diretamente na conversa com {invitePhone}</strong>.
+                    </span>
+                  ) : (
+                    <span>
+                      Digite o celular para o WhatsApp abrir direto na conversa do contato.
+                    </span>
+                  )}
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-zinc-800">
@@ -1154,9 +1182,16 @@ function ConfiguracoesContent() {
               </button>
 
               <a
-                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                  `Olá ${inviteResult.name}! Aqui está o seu link de acesso ao Personal App para você definir sua senha (válido por 48h):\n\n${inviteResult.inviteUrl}`
-                )}`}
+                href={(() => {
+                  const cleanDigits = invitePhone.replace(/\D/g, "");
+                  const targetPhone = cleanDigits.length >= 10 ? sanitizePhone(invitePhone) : "";
+                  const msg = encodeURIComponent(
+                    `Olá ${inviteResult.name}! Aqui está o seu link de acesso ao Personal App para você definir sua senha (válido por 48h):\n\n${inviteResult.inviteUrl}`
+                  );
+                  return targetPhone
+                    ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${msg}`
+                    : `https://api.whatsapp.com/send?text=${msg}`;
+                })()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40"
