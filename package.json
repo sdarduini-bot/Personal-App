@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
-    "build": "next build",
+    "build": "DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy next build",
     "start": "prisma generate && prisma db push && next start -H 0.0.0.0",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
