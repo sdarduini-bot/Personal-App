@@ -27,6 +27,8 @@ import {
   RefreshCw,
   Plus,
   X,
+  Copy,
+  Share2,
 } from "lucide-react";
 
 import { useTrainer } from "@/contexts/TrainerContext";
@@ -87,6 +89,14 @@ function ConfiguracoesContent() {
   const [resetModalTrainer, setResetModalTrainer] = useState<AdminTrainerItem | null>(null);
   const [resetPasswordVal, setResetPasswordVal] = useState("");
   const [savingReset, setSavingReset] = useState(false);
+
+  // Modal de Link de Convite Gerado
+  const [inviteResult, setInviteResult] = useState<{
+    name: string;
+    email: string;
+    inviteUrl: string;
+  } | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const fetchSettings = async () => {
     try {
@@ -207,8 +217,8 @@ function ConfiguracoesContent() {
 
   const handleCreateTrainer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTrainerForm.name || !newTrainerForm.email || !newTrainerForm.password) {
-      setAdminActionError("Preencha todos os campos obrigatórios.");
+    if (!newTrainerForm.name.trim() || !newTrainerForm.email.trim()) {
+      setAdminActionError("Informe o nome e o e-mail do treinador.");
       return;
     }
 
@@ -226,8 +236,16 @@ function ConfiguracoesContent() {
       const data = await res.json();
       if (res.ok) {
         setAdminActionSuccess(`Treinador "${newTrainerForm.name}" cadastrado com sucesso!`);
-        setNewTrainerForm({ name: "", email: "", phone: "", password: "" });
         setShowAddModal(false);
+        if (data.inviteUrl) {
+          setInviteResult({
+            name: newTrainerForm.name,
+            email: newTrainerForm.email,
+            inviteUrl: data.inviteUrl,
+          });
+          setCopiedLink(false);
+        }
+        setNewTrainerForm({ name: "", email: "", phone: "", password: "" });
         fetchTrainers();
         setTimeout(() => setAdminActionSuccess(""), 4000);
       } else {
@@ -237,6 +255,33 @@ function ConfiguracoesContent() {
       setAdminActionError("Falha de conexão com o servidor.");
     } finally {
       setSavingNewTrainer(false);
+    }
+  };
+
+  const handleGetInviteLink = async (targetTrainer: AdminTrainerItem) => {
+    setAdminActionError("");
+    try {
+      const res = await fetch("/api/admin/trainers", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trainerId: targetTrainer.id,
+          action: "get_invite_link",
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.inviteUrl) {
+        setInviteResult({
+          name: targetTrainer.name,
+          email: targetTrainer.email,
+          inviteUrl: data.inviteUrl,
+        });
+        setCopiedLink(false);
+      } else {
+        setAdminActionError(data.error || "Erro ao gerar link de convite.");
+      }
+    } catch {
+      setAdminActionError("Erro de comunicação com o servidor.");
     }
   };
 
@@ -670,7 +715,17 @@ function ConfiguracoesContent() {
                           </div>
 
                           {/* Ações do Treinador */}
-                          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center flex-wrap sm:flex-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleGetInviteLink(t)}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/50 text-emerald-300 text-xs font-medium transition flex items-center gap-1.5"
+                              title="Gerar / Copiar Link de Convite"
+                            >
+                              <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Link de Convite</span>
+                            </button>
+
                             <button
                               type="button"
                               onClick={() => {
@@ -787,12 +842,11 @@ function ConfiguracoesContent() {
 
               <div>
                 <label className="text-xs font-semibold text-zinc-300 block mb-1">
-                  Senha Provisória
+                  Senha Provisória (Opcional)
                 </label>
                 <input
                   type="text"
-                  required
-                  placeholder="Ex: 1234 ou senha inicial"
+                  placeholder="Deixe em branco para convite por link (Recomendado)"
                   value={newTrainerForm.password}
                   onChange={(e) =>
                     setNewTrainerForm({ ...newTrainerForm, password: e.target.value })
@@ -800,7 +854,7 @@ function ConfiguracoesContent() {
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 focus:outline-none focus:border-amber-500 font-mono"
                 />
                 <p className="text-[10px] text-zinc-500 mt-1">
-                  O treinador poderá alterar a senha posteriormente pelo aplicativo.
+                  Se em branco, um link de convite seguro (válido por 48h) será gerado para o treinador cadastrar a própria senha.
                 </p>
               </div>
 
@@ -817,7 +871,7 @@ function ConfiguracoesContent() {
                   disabled={savingNewTrainer}
                   className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-zinc-950 font-bold text-xs transition shadow-md shadow-amber-500/20 disabled:opacity-50"
                 >
-                  {savingNewTrainer ? "Criando..." : "Criar Acesso Imediato"}
+                  {savingNewTrainer ? "Cadastrando..." : "Cadastrar Treinador"}
                 </button>
               </div>
             </form>
@@ -877,6 +931,79 @@ function ConfiguracoesContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: LINK DE CONVITE GERADO */}
+      {inviteResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <Share2 className="w-5 h-5 text-emerald-400" />
+                <h3 className="font-bold text-zinc-100 text-base">Link de Convite Criado</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInviteResult(null)}
+                className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs text-zinc-300 leading-relaxed">
+                O link para <strong className="text-white">{inviteResult.name}</strong> ({inviteResult.email}) cadastrar a própria senha está pronto e é válido por <strong>48 horas</strong>:
+              </p>
+
+              <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-xl">
+                <p className="text-xs text-zinc-400 font-mono break-all select-all">
+                  {inviteResult.inviteUrl}
+                </p>
+              </div>
+
+              <p className="text-[11px] text-zinc-500">
+                Se o serviço de e-mail estiver configurado, a mensagem já foi enviada. Você também pode enviar o link diretamente pelo WhatsApp agora:
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-zinc-800">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(inviteResult.inviteUrl);
+                  setCopiedLink(true);
+                  setTimeout(() => setCopiedLink(false), 2500);
+                }}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-semibold transition flex items-center justify-center gap-2"
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span>Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 text-zinc-400" />
+                    <span>Copiar Link</span>
+                  </>
+                )}
+              </button>
+
+              <a
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                  `Olá ${inviteResult.name}! Aqui está o seu link de acesso ao Personal App para você definir sua senha (válido por 48h):\n\n${inviteResult.inviteUrl}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Enviar no WhatsApp</span>
+              </a>
+            </div>
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminSession, hashPassword } from "@/lib/auth-trainer";
+import { createInviteToken, sendInviteEmail, generateSecureToken } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -61,13 +62,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "E-mail válido é obrigatório." }, { status: 400 });
     }
 
-    if (!password || password.trim().length < 4) {
-      return NextResponse.json(
-        { error: "A senha inicial deve ter no mínimo 4 caracteres." },
-        { status: 400 }
-      );
-    }
-
     const cleanEmail = email.toLowerCase().trim();
 
     // Verificar se já existe
@@ -82,11 +76,14 @@ export async function POST(req: Request) {
       );
     }
 
+    // Se fornecida senha manual usa ela, senão gera senha provisória aleatória
+    const finalPassword = password && password.trim().length >= 4 ? password.trim() : generateSecureToken().substring(0, 12);
+
     const newTrainer = await prisma.trainer.create({
       data: {
         name: name.trim(),
         email: cleanEmail,
-        passwordHash: hashPassword(password),
+        passwordHash: hashPassword(finalPassword),
         phone: phone ? phone.trim() : null,
         pixKey: cleanEmail,
         bio: "Personal Trainer",
@@ -105,8 +102,23 @@ export async function POST(req: Request) {
       },
     });
 
+    // Gerar token de convite e link de ativação
+    const token = await createInviteToken(cleanEmail);
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:3000";
+    const proto = req.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+    const baseUrl = `${proto}://${host}`;
+    const inviteUrl = `${baseUrl}/redefinir-senha?token=${token}&type=invite`;
+
+    // Dispara e-mail de convite
+    await sendInviteEmail(cleanEmail, newTrainer.name, token, baseUrl);
+
     return NextResponse.json(
-      { success: true, message: "Treinador cadastrado com sucesso!", trainer: newTrainer },
+      {
+        success: true,
+        message: "Treinador cadastrado com sucesso!",
+        trainer: newTrainer,
+        inviteUrl,
+      },
       { status: 201 }
     );
   } catch (error) {
@@ -116,7 +128,7 @@ export async function POST(req: Request) {
 }
 
 /**
- * PUT: Alterar status (Ativo/Inativo) ou Redefinir Senha do treinador (Apenas Admin)
+ * PUT: Alterar status, Redefinir Senha ou Gerar Link de Convite
  */
 export async function PUT(req: Request) {
   try {
@@ -126,7 +138,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { trainerId, isActive, newPassword, name, phone } = body;
+    const { trainerId, action, isActive, newPassword, name, phone } = body;
 
     if (!trainerId) {
       return NextResponse.json({ error: "ID do treinador é obrigatório." }, { status: 400 });
@@ -138,6 +150,23 @@ export async function PUT(req: Request) {
 
     if (!targetTrainer) {
       return NextResponse.json({ error: "Treinador não encontrado." }, { status: 404 });
+    }
+
+    // Ação: Gerar novo link de convite / reativação
+    if (action === "get_invite_link") {
+      const token = await createInviteToken(targetTrainer.email);
+      const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:3000";
+      const proto = req.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+      const baseUrl = `${proto}://${host}`;
+      const inviteUrl = `${baseUrl}/redefinir-senha?token=${token}&type=invite`;
+
+      await sendInviteEmail(targetTrainer.email, targetTrainer.name, token, baseUrl);
+
+      return NextResponse.json({
+        success: true,
+        message: "Link de convite gerado com sucesso!",
+        inviteUrl,
+      });
     }
 
     // Não permitir desativar a própria conta admin master

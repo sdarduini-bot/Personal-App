@@ -244,3 +244,16 @@ model AssessmentPhoto {
   @@index([type])
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  type      String   @default("RESET") // "INVITE", "RESET"
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([email])
+}
+
