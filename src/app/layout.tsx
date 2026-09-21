@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { TrainerProvider } from "@/contexts/TrainerContext";
+import OfflineIndicator from "@/components/OfflineIndicator";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -45,6 +46,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark theme-emerald">
       <body className={`${inter.variable} font-sans min-h-screen bg-zinc-950 text-zinc-100 flex flex-col`}>
+        <OfflineIndicator />
         <ThemeProvider>
           <TrainerProvider>{children}</TrainerProvider>
         </ThemeProvider>
