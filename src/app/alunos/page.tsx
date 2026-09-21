@@ -27,7 +27,7 @@ import {
   Zap,
   Package,
 } from "lucide-react";
-import { formatCurrency, formatDateShort, buildWhatsAppLink } from "@/lib/formatters";
+import { formatCurrency, formatDateShort, buildWhatsAppLink, formatPhone } from "@/lib/formatters";
 import { fetchWithCache, clearCache } from "@/lib/cache";
 
 interface StudentItem {
@@ -334,7 +334,7 @@ function AlunosContent() {
                             </h3>
                             <p className="text-[11px] text-zinc-400 flex items-center gap-1 mt-0.5">
                               <Phone className="w-3 h-3 text-zinc-500" />
-                              {student.phone}
+                              {formatPhone(student.phone)}
                             </p>
                           </div>
                         </div>
@@ -507,11 +507,12 @@ function AlunosContent() {
                         Telefone / WhatsApp *
                       </label>
                       <input
-                        type="text"
+                        type="tel"
                         required
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, phone: formatPhone(e.target.value) })}
                         placeholder="(11) 98765-4321"
+                        maxLength={15}
                         className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs min-h-[44px] text-zinc-100 focus:outline-none focus:border-emerald-500"
                       />
                     </div>

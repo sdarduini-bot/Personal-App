@@ -59,6 +59,36 @@ export function sanitizePhone(phone: string): string {
   return digits;
 }
 
+/** 
+ * Formata automaticamente número de telefone no padrão brasileiro para celular:
+ * Celular: (XX) 9XXXX-XXXX (11 dígitos)
+ * Fixo: (XX) XXXX-XXXX (10 dígitos)
+ */
+export function formatPhone(value: string | null | undefined): string {
+  if (!value) return "";
+  let digits = value.replace(/\D/g, "");
+
+  // Se vier com DDI internacional do Brasil (55), remove para manter DDD + número
+  if (digits.length > 11 && digits.startsWith("55")) {
+    digits = digits.slice(2);
+  }
+
+  // Limita a 11 dígitos
+  digits = digits.slice(0, 11);
+  if (!digits) return "";
+
+  if (digits.length <= 2) {
+    return `(${digits}`;
+  }
+  if (digits.length <= 6) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  }
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+}
+
 /** Gera link do WhatsApp Web / Mobile com texto */
 export function buildWhatsAppLink(phone: string, message: string): string {
   const sanitized = sanitizePhone(phone);

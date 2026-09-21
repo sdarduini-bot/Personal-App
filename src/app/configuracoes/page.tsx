@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 
 import { useTrainer } from "@/contexts/TrainerContext";
+import { formatPhone } from "@/lib/formatters";
 
 interface AdminTrainerItem {
   id: string;
@@ -116,7 +117,7 @@ function ConfiguracoesContent() {
         setForm((prev) => ({
           ...prev,
           name: data.name || "",
-          phone: data.phone || "",
+          phone: formatPhone(data.phone || ""),
           pixKey: data.pixKey || "",
           bio: data.bio || "",
         }));
@@ -337,7 +338,7 @@ function ConfiguracoesContent() {
     setEditTrainerForm({
       name: t.name || "",
       email: t.email || "",
-      phone: t.phone || "",
+      phone: formatPhone(t.phone || ""),
     });
   };
 
@@ -573,10 +574,11 @@ function ConfiguracoesContent() {
                             WhatsApp / Celular
                           </label>
                           <input
-                            type="text"
+                            type="tel"
                             value={form.phone}
-                            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                            placeholder="(11) 99999-8888"
+                            onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
+                            placeholder="(11) 98765-4321"
+                            maxLength={15}
                             className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500"
                           />
                         </div>
@@ -765,7 +767,7 @@ function ConfiguracoesContent() {
 
                             <p className="text-xs text-zinc-400 flex items-center gap-3">
                               <span>E-mail: <strong className="text-zinc-300">{t.email}</strong></span>
-                              {t.phone && <span>Tel: {t.phone}</span>}
+                              {t.phone && <span>Tel: {formatPhone(t.phone)}</span>}
                             </p>
 
                             <p className="text-[11px] text-zinc-500 pt-0.5">
@@ -900,10 +902,11 @@ function ConfiguracoesContent() {
                 </label>
                 <input
                   type="tel"
-                  placeholder="(11) 98888-7777"
+                  placeholder="(11) 98765-4321"
+                  maxLength={15}
                   value={newTrainerForm.phone}
                   onChange={(e) =>
-                    setNewTrainerForm({ ...newTrainerForm, phone: e.target.value })
+                    setNewTrainerForm({ ...newTrainerForm, phone: formatPhone(e.target.value) })
                   }
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 focus:outline-none focus:border-amber-500"
                 />
@@ -1061,10 +1064,11 @@ function ConfiguracoesContent() {
                 </label>
                 <input
                   type="tel"
-                  placeholder="(11) 98888-7777"
+                  placeholder="(11) 98765-4321"
+                  maxLength={15}
                   value={editTrainerForm.phone}
                   onChange={(e) =>
-                    setEditTrainerForm({ ...editTrainerForm, phone: e.target.value })
+                    setEditTrainerForm({ ...editTrainerForm, phone: formatPhone(e.target.value) })
                   }
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 focus:outline-none focus:border-amber-500"
                 />
