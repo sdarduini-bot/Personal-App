@@ -1221,7 +1221,14 @@ function ConfiguracoesContent() {
                     const cleanDigits = invitePhone.replace(/\D/g, "");
                     const targetPhone = cleanDigits.length >= 10 ? sanitizePhone(invitePhone) : "";
                     const msg = encodeURIComponent(
-                      `Olá ${inviteResult.name}! Aqui está o seu link de acesso ao Personal App para você definir sua senha (válido por 48h):\n\n${inviteResult.inviteUrl}`
+                      `Olá ${inviteResult.name}! Aqui está o seu acesso exclusivo ao Personal App:\n\n` +
+                      `🔗 Toque no link abaixo para cadastrar sua senha pessoal (válido por 48h):\n` +
+                      `${inviteResult.inviteUrl}\n\n` +
+                      `📱 *COMO USAR COMO APLICATIVO NO SEU CELULAR*\n` +
+                      `Após cadastrar sua senha e entrar:\n` +
+                      `• *No iPhone (Safari):* Toque no ícone Compartilhar (quadrado com seta ⎋) e escolha "Adicionar à Tela de Início" ➕\n` +
+                      `• *No Android (Chrome):* Toque no menu (⋮) no topo e escolha "Instalar aplicativo" ou "Adicionar à tela inicial" 📲\n\n` +
+                      `Assim ele abre direto em tela cheia como um app nativo! Qualquer dúvida estou à disposição.`
                     );
                     return targetPhone
                       ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${msg}`
@@ -1282,9 +1289,18 @@ function ConfiguracoesContent() {
 
                 <a
                   href={`mailto:${inviteResult.email}?subject=${encodeURIComponent(
-                    "Seu Acesso ao Personal App - Definição de Senha"
+                    "Seu Acesso ao Personal App - Definição de Senha & Como Instalar"
                   )}&body=${encodeURIComponent(
-                    `Olá ${inviteResult.name}!\n\nAqui está o seu link de acesso exclusivo ao Personal App para você definir sua senha (válido por 48 horas):\n\n${inviteResult.inviteUrl}\n\nQualquer dúvida estou à disposição!`
+                    `Olá ${inviteResult.name}!\n\n` +
+                    `Aqui está o seu link de acesso exclusivo ao Personal App para você definir sua senha pessoal (válido por 48 horas):\n\n` +
+                    `${inviteResult.inviteUrl}\n\n` +
+                    `-----------------------------------------\n` +
+                    `📱 DICA: COMO USAR COMO APLICATIVO NO SEU CELULAR\n` +
+                    `Após cadastrar sua senha e entrar no sistema:\n` +
+                    `• No iPhone (Safari): Toque no ícone de Compartilhar (quadrado com seta ⎋) e escolha "Adicionar à Tela de Início" ➕\n` +
+                    `• No Android (Chrome): Toque nos 3 pontinhos (⋮) no canto superior e escolha "Instalar aplicativo" ou "Adicionar à tela inicial" 📲\n\n` +
+                    `Dessa forma o aplicativo ficará fixado direto na tela inicial do seu celular, abrindo em tela cheia como um app nativo.\n\n` +
+                    `Qualquer dúvida estou à disposição!`
                   )}`}
                   className="py-2 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition flex items-center justify-center gap-2"
                   title="Abrir seu aplicativo de e-mail padrão (Gmail, Outlook, etc.)"

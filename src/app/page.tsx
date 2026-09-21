@@ -20,9 +20,12 @@ import {
   Dumbbell,
   DollarSign,
   Sparkles,
+  Smartphone,
+  X,
 } from "lucide-react";
 import { formatCurrency, formatDateShort, buildWhatsAppLink } from "@/lib/formatters";
 import { fetchWithCache, clearCache } from "@/lib/cache";
+import InstallAppGuideModal from "@/components/InstallAppGuideModal";
 
 interface DashboardData {
   todayStr: string;
@@ -74,6 +77,21 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [showMobileBanner, setShowMobileBanner] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+      const dismissed = localStorage.getItem("pwa_banner_dismissed");
+      if (isMobile && !isStandalone && !dismissed) {
+        setShowMobileBanner(true);
+      }
+    }
+  }, []);
 
   const fetchDashboard = async () => {
     try {
@@ -151,6 +169,46 @@ export default function DashboardPage() {
               </div>
             ) : data ? (
               <>
+                {/* Banner Inteligente de Instalação Mobile (PWA) */}
+                {showMobileBanner && (
+                  <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-emerald-950/80 via-zinc-900 to-zinc-900 border border-emerald-800/70 flex items-center justify-between gap-3 shadow-lg shadow-emerald-950/20 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                        <Smartphone className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-zinc-100 flex items-center gap-1.5">
+                          <span>Instale o App no seu Celular</span>
+                          <span className="hidden sm:inline px-1.5 py-0.2 text-[9px] rounded-full bg-emerald-500/20 text-emerald-300 font-medium">1 Toque</span>
+                        </p>
+                        <p className="text-[11px] text-zinc-400">
+                          Acesse em tela cheia na sua tela inicial como um app nativo.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setShowInstallGuide(true)}
+                        className="py-1.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-zinc-950 text-xs font-bold transition shadow-sm"
+                      >
+                        Como Instalar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMobileBanner(false);
+                          localStorage.setItem("pwa_banner_dismissed", "true");
+                        }}
+                        className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
+                        title="Dispensar aviso"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* 1. CARDS DE NÚMEROS RÁPIDOS */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                   {/* Total de Alunos */}
@@ -482,6 +540,11 @@ export default function DashboardPage() {
           </main>
         </div>
       </div>
+
+      <InstallAppGuideModal
+        isOpen={showInstallGuide}
+        onClose={() => setShowInstallGuide(false)}
+      />
     </AuthGuard>
   );
 }

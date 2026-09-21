@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { Dumbbell, Lock, Settings, Sparkles } from "lucide-react";
+import { Dumbbell, Lock, Settings, Sparkles, Smartphone } from "lucide-react";
 import { useTrainer } from "@/contexts/TrainerContext";
+import InstallAppGuideModal from "@/components/InstallAppGuideModal";
 
 interface HeaderProps {
   title?: string;
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 export default function Header({ title, subtitle }: HeaderProps) {
   const { trainer, isAdmin, logout } = useTrainer();
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
 
   return (
     <header
@@ -49,6 +51,17 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
         {/* Lado Direito: Ações rápidas */}
         <div className="flex items-center gap-2">
+          {/* Botão Como Instalar no Celular */}
+          <button
+            type="button"
+            onClick={() => setShowInstallGuide(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-800/60 transition text-xs font-semibold"
+            title="Como instalar este app no seu celular"
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Instalar App</span>
+          </button>
+
           <Link
             href="/configuracoes"
             className="p-2 rounded-xl text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition"
@@ -68,6 +81,12 @@ export default function Header({ title, subtitle }: HeaderProps) {
           </button>
         </div>
       </div>
+
+      {/* Modal com Guia Passo a Passo para iOS e Android */}
+      <InstallAppGuideModal
+        isOpen={showInstallGuide}
+        onClose={() => setShowInstallGuide(false)}
+      />
     </header>
   );
 }

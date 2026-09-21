@@ -147,6 +147,28 @@ export async function sendInviteEmail(email: string, name: string, token: string
           <p style="font-size: 12px; color: #a1a1aa;">
             Este link é exclusivo para você e possui validade de <strong>48 horas</strong>.
           </p>
+
+          <!-- Dica de Instalação no Celular -->
+          <div style="background: #27272a; border: 1px solid #3f3f46; border-radius: 14px; padding: 18px; margin: 24px 0; text-align: left;">
+            <div style="font-size: 14px; font-weight: bold; color: #10b981; margin-bottom: 8px;">
+              📱 Dica: Use como Aplicativo Nativo no seu Celular
+            </div>
+            <p style="font-size: 12px; color: #d4d4d8; margin: 0 0 10px 0;">
+              Após cadastrar sua senha e entrar no sistema:
+            </p>
+            <div style="font-size: 12px; color: #a1a1aa; line-height: 1.6;">
+              <p style="margin: 6px 0;">
+                <strong style="color: #f4f4f5;">• No iPhone (Safari):</strong> Toque no ícone Compartilhar (quadrado com seta para cima ⎋) e selecione <em>"Adicionar à Tela de Início"</em>.
+              </p>
+              <p style="margin: 6px 0;">
+                <strong style="color: #f4f4f5;">• No Android (Chrome):</strong> Toque no menu de três pontinhos (⋮) no topo e selecione <em>"Instalar aplicativo"</em> ou <em>"Adicionar à tela inicial"</em>.
+              </p>
+            </div>
+            <p style="font-size: 11px; color: #71717a; margin: 10px 0 0 0;">
+              O ícone ficará fixo na tela do seu celular e o aplicativo abrirá em tela cheia sem as barras de navegação!
+            </p>
+          </div>
+
           <div class="footer">
             <p>Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
             <p class="link-fallback">${inviteUrl}</p>
@@ -156,10 +178,25 @@ export async function sendInviteEmail(email: string, name: string, token: string
     </html>
   `;
 
+  const text = `Olá ${name}!
+
+Você foi convidado para o Personal Trainer Pro.
+Para começar a usar, cadastre sua senha no link abaixo (válido por 48h):
+${inviteUrl}
+
+-----------------------------------------
+DICA: COMO USAR COMO APLICATIVO NO SEU CELULAR
+Após definir sua senha e entrar:
+• No iPhone (Safari): Toque no ícone de Compartilhar (⎋) e selecione "Adicionar à Tela de Início".
+• No Android (Chrome): Toque no menu (⋮) e selecione "Instalar aplicativo" ou "Adicionar à tela inicial".
+
+Qualquer dúvida estamos à disposição!`;
+
   return sendEmail({
     to: email,
     subject: "Convite de Acesso: Cadastre sua senha no Personal Trainer Pro",
     html,
+    text,
   });
 }
 
