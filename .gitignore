@@ -31,3 +31,11 @@ test-*.js
 # uploads de midia
 /public/uploads/*
 !/public/uploads/**/.gitkeep
+
+# sqlite databases e variaveis locais
+prisma/*.db
+prisma/*.db-journal
+*.db
+*.db-journal
+.env
+.env.local
