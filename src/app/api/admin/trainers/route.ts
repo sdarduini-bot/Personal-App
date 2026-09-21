@@ -138,7 +138,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { trainerId, action, isActive, newPassword, name, phone } = body;
+    const { trainerId, action, isActive, newPassword, name, phone, email } = body;
 
     if (!trainerId) {
       return NextResponse.json({ error: "ID do treinador é obrigatório." }, { status: 400 });
@@ -182,6 +182,7 @@ export async function PUT(req: Request) {
       passwordHash?: string;
       name?: string;
       phone?: string;
+      email?: string;
     } = {};
 
     if (typeof isActive === "boolean") {
@@ -198,6 +199,29 @@ export async function PUT(req: Request) {
 
     if (phone !== undefined) {
       updateData.phone = phone.trim();
+    }
+
+    if (email && email.trim()) {
+      const cleanEmail = email.toLowerCase().trim();
+      if (!cleanEmail.includes("@")) {
+        return NextResponse.json({ error: "E-mail inválido." }, { status: 400 });
+      }
+
+      // Se for alteração de e-mail, verificar se já está em uso por outro treinador
+      if (cleanEmail !== targetTrainer.email.toLowerCase()) {
+        const existing = await prisma.trainer.findUnique({
+          where: { email: cleanEmail },
+        });
+
+        if (existing) {
+          return NextResponse.json(
+            { error: "Este e-mail já está sendo utilizado por outro treinador." },
+            { status: 400 }
+          );
+        }
+      }
+
+      updateData.email = cleanEmail;
     }
 
     const updated = await prisma.trainer.update({

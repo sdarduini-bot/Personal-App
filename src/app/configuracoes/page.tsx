@@ -29,6 +29,7 @@ import {
   X,
   Copy,
   Share2,
+  Pencil,
 } from "lucide-react";
 
 import { useTrainer } from "@/contexts/TrainerContext";
@@ -89,6 +90,15 @@ function ConfiguracoesContent() {
   const [resetModalTrainer, setResetModalTrainer] = useState<AdminTrainerItem | null>(null);
   const [resetPasswordVal, setResetPasswordVal] = useState("");
   const [savingReset, setSavingReset] = useState(false);
+
+  // Modal de Edição de Treinador
+  const [editingTrainer, setEditingTrainer] = useState<AdminTrainerItem | null>(null);
+  const [editTrainerForm, setEditTrainerForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
+  const [savingEditTrainer, setSavingEditTrainer] = useState(false);
 
   // Modal de Link de Convite Gerado
   const [inviteResult, setInviteResult] = useState<{
@@ -319,6 +329,55 @@ function ConfiguracoesContent() {
       setAdminActionError("Erro de comunicação ao redefinir senha.");
     } finally {
       setSavingReset(false);
+    }
+  };
+
+  const handleStartEdit = (t: AdminTrainerItem) => {
+    setEditingTrainer(t);
+    setEditTrainerForm({
+      name: t.name || "",
+      email: t.email || "",
+      phone: t.phone || "",
+    });
+  };
+
+  const handleSaveEditTrainer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTrainer) return;
+    if (!editTrainerForm.name.trim() || !editTrainerForm.email.trim()) {
+      setAdminActionError("Nome e e-mail são obrigatórios.");
+      return;
+    }
+
+    setSavingEditTrainer(true);
+    setAdminActionError("");
+    setAdminActionSuccess("");
+
+    try {
+      const res = await fetch("/api/admin/trainers", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trainerId: editingTrainer.id,
+          name: editTrainerForm.name.trim(),
+          email: editTrainerForm.email.trim(),
+          phone: editTrainerForm.phone.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setAdminActionSuccess(`Dados de "${editTrainerForm.name}" atualizados com sucesso!`);
+        setEditingTrainer(null);
+        fetchTrainers();
+        setTimeout(() => setAdminActionSuccess(""), 4000);
+      } else {
+        setAdminActionError(data.error || "Erro ao atualizar treinador.");
+      }
+    } catch {
+      setAdminActionError("Erro de comunicação com o servidor.");
+    } finally {
+      setSavingEditTrainer(false);
     }
   };
 
@@ -718,6 +777,16 @@ function ConfiguracoesContent() {
                           <div className="flex items-center gap-2 shrink-0 self-end sm:self-center flex-wrap sm:flex-nowrap">
                             <button
                               type="button"
+                              onClick={() => handleStartEdit(t)}
+                              className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition flex items-center gap-1.5"
+                              title="Editar nome, e-mail e telefone"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Editar</span>
+                            </button>
+
+                            <button
+                              type="button"
                               onClick={() => handleGetInviteLink(t)}
                               className="px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/50 text-emerald-300 text-xs font-medium transition flex items-center gap-1.5"
                               title="Gerar / Copiar Link de Convite"
@@ -928,6 +997,94 @@ function ConfiguracoesContent() {
                   className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-zinc-950 font-bold text-xs transition shadow-md shadow-amber-500/20 disabled:opacity-50"
                 >
                   {savingReset ? "Salvando..." : "Salvar Nova Senha"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDITAR TREINADOR */}
+      {editingTrainer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-amber-400" />
+                <h3 className="font-bold text-zinc-100 text-base">Editar Treinador</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingTrainer(null)}
+                className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditTrainer} className="space-y-3.5">
+              <div>
+                <label className="text-xs font-semibold text-zinc-300 block mb-1">
+                  Nome Completo
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Pedro Personal"
+                  value={editTrainerForm.name}
+                  onChange={(e) =>
+                    setEditTrainerForm({ ...editTrainerForm, name: e.target.value })
+                  }
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300 block mb-1">
+                  E-mail de Login
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="treinador@email.com"
+                  value={editTrainerForm.email}
+                  onChange={(e) =>
+                    setEditTrainerForm({ ...editTrainerForm, email: e.target.value })
+                  }
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-zinc-300 block mb-1">
+                  WhatsApp / Telefone
+                </label>
+                <input
+                  type="tel"
+                  placeholder="(11) 98888-7777"
+                  value={editTrainerForm.phone}
+                  onChange={(e) =>
+                    setEditTrainerForm({ ...editTrainerForm, phone: e.target.value })
+                  }
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingTrainer(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEditTrainer}
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-zinc-950 font-bold text-xs transition shadow-md shadow-amber-500/20 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{savingEditTrainer ? "Salvando..." : "Salvar Alterações"}</span>
                 </button>
               </div>
             </form>
