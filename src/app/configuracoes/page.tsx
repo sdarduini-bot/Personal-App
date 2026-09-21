@@ -1221,7 +1221,7 @@ function ConfiguracoesContent() {
                     const cleanDigits = invitePhone.replace(/\D/g, "");
                     const targetPhone = cleanDigits.length >= 10 ? sanitizePhone(invitePhone) : "";
                     const msg = encodeURIComponent(
-                      `Olá ${inviteResult.name}! Aqui está o seu acesso exclusivo ao Personal App:\n\n` +
+                      `Olá ${inviteResult.name}! Aqui está o seu acesso exclusivo ao Trainer Pro:\n\n` +
                       `🔗 Toque no link abaixo para cadastrar sua senha pessoal (válido por 48h):\n` +
                       `${inviteResult.inviteUrl}\n\n` +
                       `📱 *COMO USAR COMO APLICATIVO NO SEU CELULAR*\n` +
@@ -1289,10 +1289,10 @@ function ConfiguracoesContent() {
 
                 <a
                   href={`mailto:${inviteResult.email}?subject=${encodeURIComponent(
-                    "Seu Acesso ao Personal App - Definição de Senha & Como Instalar"
+                    "Seu Acesso ao Trainer Pro - Definição de Senha & Como Instalar"
                   )}&body=${encodeURIComponent(
                     `Olá ${inviteResult.name}!\n\n` +
-                    `Aqui está o seu link de acesso exclusivo ao Personal App para você definir sua senha pessoal (válido por 48 horas):\n\n` +
+                    `Aqui está o seu link de acesso exclusivo ao Trainer Pro para você definir sua senha pessoal (válido por 48 horas):\n\n` +
                     `${inviteResult.inviteUrl}\n\n` +
                     `-----------------------------------------\n` +
                     `📱 DICA: COMO USAR COMO APLICATIVO NO SEU CELULAR\n` +

@@ -1,7 +1,7 @@
 {
-  "name": "Pedro Personal Trainer",
-  "short_name": "Pedro PT",
-  "description": "Aplicativo de gestão de alunos, treinos, agenda e financeiro para personal trainer",
+  "name": "Trainer Pro - Gestão para Personal Trainers",
+  "short_name": "Trainer Pro",
+  "description": "Plataforma completa de gestão de alunos, treinos, agenda e financeiro para personal trainers",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
