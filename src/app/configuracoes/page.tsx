@@ -30,6 +30,9 @@ import {
   Copy,
   Share2,
   Pencil,
+  Mail,
+  ExternalLink,
+  CheckCircle2,
 } from "lucide-react";
 
 import { useTrainer } from "@/contexts/TrainerContext";
@@ -103,6 +106,7 @@ function ConfiguracoesContent() {
 
   // Modal de Link de Convite Gerado
   const [inviteResult, setInviteResult] = useState<{
+    id?: string;
     name: string;
     email: string;
     phone?: string | null;
@@ -110,6 +114,8 @@ function ConfiguracoesContent() {
   } | null>(null);
   const [invitePhone, setInvitePhone] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSentSuccess, setEmailSentSuccess] = useState("");
 
   const fetchSettings = async () => {
     try {
@@ -252,6 +258,7 @@ function ConfiguracoesContent() {
         setShowAddModal(false);
         if (data.inviteUrl) {
           setInviteResult({
+            id: data.trainer?.id,
             name: newTrainerForm.name,
             email: newTrainerForm.email,
             phone: newTrainerForm.phone,
@@ -259,6 +266,7 @@ function ConfiguracoesContent() {
           });
           setInvitePhone(formatPhone(newTrainerForm.phone || ""));
           setCopiedLink(false);
+          setEmailSentSuccess("");
         }
         setNewTrainerForm({ name: "", email: "", phone: "", password: "" });
         fetchTrainers();
@@ -287,6 +295,7 @@ function ConfiguracoesContent() {
       const data = await res.json();
       if (res.ok && data.inviteUrl) {
         setInviteResult({
+          id: targetTrainer.id,
           name: targetTrainer.name,
           email: targetTrainer.email,
           phone: targetTrainer.phone,
@@ -294,11 +303,42 @@ function ConfiguracoesContent() {
         });
         setInvitePhone(formatPhone(targetTrainer.phone || ""));
         setCopiedLink(false);
+        setEmailSentSuccess("");
       } else {
         setAdminActionError(data.error || "Erro ao gerar link de convite.");
       }
     } catch {
       setAdminActionError("Erro de comunicação com o servidor.");
+    }
+  };
+
+  const handleSendInviteEmail = async () => {
+    if (!inviteResult) return;
+    setSendingEmail(true);
+    setEmailSentSuccess("");
+    try {
+      const tokenMatch = inviteResult.inviteUrl.match(/token=([a-zA-Z0-9]+)/);
+      const token = tokenMatch ? tokenMatch[1] : undefined;
+
+      const res = await fetch("/api/admin/trainers", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trainerId: inviteResult.id,
+          action: "send_invite_email",
+          token,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setEmailSentSuccess(`E-mail de convite enviado para ${inviteResult.email}!`);
+      } else {
+        setAdminActionError(data.error || "Erro ao disparar e-mail.");
+      }
+    } catch {
+      setAdminActionError("Erro de comunicação ao disparar e-mail.");
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -1131,74 +1171,128 @@ function ConfiguracoesContent() {
                 </p>
               </div>
 
-              {/* Destinatário do WhatsApp */}
-              <div className="pt-1">
-                <label className="text-xs font-semibold text-zinc-300 block mb-1">
-                  Número do WhatsApp do Destinatário
-                </label>
-                <input
-                  type="tel"
-                  placeholder="(11) 98765-4321"
-                  maxLength={15}
-                  value={invitePhone}
-                  onChange={(e) => setInvitePhone(formatPhone(e.target.value))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 font-mono"
-                />
-                <p className="text-[10px] text-zinc-400 mt-1">
-                  {invitePhone ? (
-                    <span>
-                      O WhatsApp abrirá <strong>diretamente na conversa com {invitePhone}</strong>.
-                    </span>
-                  ) : (
-                    <span>
-                      Digite o celular para o WhatsApp abrir direto na conversa do contato.
-                    </span>
-                  )}
-                </p>
+              {/* Informações dos Canais de Envio */}
+              <div className="space-y-2.5 pt-1">
+                <div>
+                  <label className="text-[11px] font-semibold text-zinc-400 block mb-1">
+                    E-mail do Destinatário
+                  </label>
+                  <div className="flex items-center gap-2 p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-200">
+                    <Mail className="w-4 h-4 text-indigo-400 shrink-0" />
+                    <span className="font-mono">{inviteResult.email}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-zinc-400 block mb-1">
+                    WhatsApp do Destinatário
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="(11) 98765-4321"
+                    maxLength={15}
+                    value={invitePhone}
+                    onChange={(e) => setInvitePhone(formatPhone(e.target.value))}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 font-mono"
+                  />
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    {invitePhone
+                      ? `O WhatsApp abrirá diretamente na conversa com ${invitePhone}.`
+                      : "Digite o WhatsApp caso queira abrir direto na conversa do contato."}
+                  </p>
+                </div>
               </div>
+
+              {/* Feedback de E-mail Enviado */}
+              {emailSentSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-emerald-300 text-xs flex items-center gap-2 font-medium animate-fadeIn">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{emailSentSuccess}</span>
+                </div>
+              )}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-zinc-800">
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(inviteResult.inviteUrl);
-                  setCopiedLink(true);
-                  setTimeout(() => setCopiedLink(false), 2500);
-                }}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-semibold transition flex items-center justify-center gap-2"
-              >
-                {copiedLink ? (
-                  <>
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span>Copiado!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4 text-zinc-400" />
-                    <span>Copiar Link</span>
-                  </>
-                )}
-              </button>
+            {/* Ações de Disparo */}
+            <div className="space-y-2 pt-2 border-t border-zinc-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* 1. WhatsApp */}
+                <a
+                  href={(() => {
+                    const cleanDigits = invitePhone.replace(/\D/g, "");
+                    const targetPhone = cleanDigits.length >= 10 ? sanitizePhone(invitePhone) : "";
+                    const msg = encodeURIComponent(
+                      `Olá ${inviteResult.name}! Aqui está o seu link de acesso ao Personal App para você definir sua senha (válido por 48h):\n\n${inviteResult.inviteUrl}`
+                    );
+                    return targetPhone
+                      ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${msg}`
+                      : `https://api.whatsapp.com/send?text=${msg}`;
+                  })()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>Enviar no WhatsApp</span>
+                </a>
 
-              <a
-                href={(() => {
-                  const cleanDigits = invitePhone.replace(/\D/g, "");
-                  const targetPhone = cleanDigits.length >= 10 ? sanitizePhone(invitePhone) : "";
-                  const msg = encodeURIComponent(
-                    `Olá ${inviteResult.name}! Aqui está o seu link de acesso ao Personal App para você definir sua senha (válido por 48h):\n\n${inviteResult.inviteUrl}`
-                  );
-                  return targetPhone
-                    ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${msg}`
-                    : `https://api.whatsapp.com/send?text=${msg}`;
-                })()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Enviar no WhatsApp</span>
-              </a>
+                {/* 2. E-mail Transacional */}
+                <button
+                  type="button"
+                  onClick={handleSendInviteEmail}
+                  disabled={sendingEmail}
+                  className="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-950/40 disabled:opacity-60"
+                >
+                  {sendingEmail ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Enviando E-mail...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4" />
+                      <span>Enviar por E-mail</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Botões Secundários: Copiar Link e Abrir no App de E-mail */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteResult.inviteUrl);
+                    setCopiedLink(true);
+                    setTimeout(() => setCopiedLink(false), 2500);
+                  }}
+                  className="py-2 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition flex items-center justify-center gap-2"
+                >
+                  {copiedLink ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-400" />
+                      <span>Link Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 text-zinc-400" />
+                      <span>Copiar Link</span>
+                    </>
+                  )}
+                </button>
+
+                <a
+                  href={`mailto:${inviteResult.email}?subject=${encodeURIComponent(
+                    "Seu Acesso ao Personal App - Definição de Senha"
+                  )}&body=${encodeURIComponent(
+                    `Olá ${inviteResult.name}!\n\nAqui está o seu link de acesso exclusivo ao Personal App para você definir sua senha (válido por 48 horas):\n\n${inviteResult.inviteUrl}\n\nQualquer dúvida estou à disposição!`
+                  )}`}
+                  className="py-2 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition flex items-center justify-center gap-2"
+                  title="Abrir seu aplicativo de e-mail padrão (Gmail, Outlook, etc.)"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Abrir no App de E-mail</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>

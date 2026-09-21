@@ -169,6 +169,25 @@ export async function PUT(req: Request) {
       });
     }
 
+    // Ação: Reenviar e-mail de convite explicitamente
+    if (action === "send_invite_email") {
+      const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:3000";
+      const proto = req.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+      const baseUrl = `${proto}://${host}`;
+
+      let token = body.token;
+      if (!token) {
+        token = await createInviteToken(targetTrainer.email);
+      }
+
+      await sendInviteEmail(targetTrainer.email, targetTrainer.name, token, baseUrl);
+
+      return NextResponse.json({
+        success: true,
+        message: `E-mail de convite enviado para ${targetTrainer.email}!`,
+      });
+    }
+
     // Não permitir desativar a própria conta admin master
     if (targetTrainer.role === "ADMIN" && isActive === false) {
       return NextResponse.json(
