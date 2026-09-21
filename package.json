@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
-    "start": "prisma generate && prisma db push && next start -H 0.0.0.0",
+    "start": "rm -f prisma/.env && prisma generate && prisma db push && next start -H 0.0.0.0",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
