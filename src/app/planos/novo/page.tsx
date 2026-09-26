@@ -18,9 +18,12 @@ import {
   Copy,
   Edit3,
   BookOpen,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { fetchWithCache, clearCache } from "@/lib/cache";
 import ExercisePickerModal from "@/components/ExercisePickerModal";
+import { type NoteBlock, parseNotes, serializeNotes, createNoteBlock } from "@/lib/workout-notes";
 
 interface ExerciseRow {
   id: string;
@@ -46,7 +49,9 @@ function NovoPlanoContent() {
   const [studentId, setStudentId] = useState(preselectedStudentId);
   const [title, setTitle] = useState("");
   const [goal, setGoal] = useState("");
-  const [notes, setNotes] = useState("");
+  const initialBlock = createNoteBlock();
+  const [noteBlocks, setNoteBlocks] = useState<NoteBlock[]>([initialBlock]);
+  const [openBlockId, setOpenBlockId] = useState<string | null>(initialBlock.id);
   const [sourcePlanTitle, setSourcePlanTitle] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loadingExisting, setLoadingExisting] = useState(Boolean(editId || cloneFromId));
@@ -89,14 +94,20 @@ function NovoPlanoContent() {
             setStudentId(data.studentId);
             setTitle(data.title || "");
             setGoal(data.goal || "");
-            setNotes(data.notes || "");
+            const parsed = parseNotes(data.notes);
+            const blocks = parsed.length > 0 ? parsed : [createNoteBlock()];
+            setNoteBlocks(blocks);
+            setOpenBlockId(blocks[0].id);
           } else if (isCloneMode) {
             if (preselectedStudentId) {
               setStudentId(preselectedStudentId);
             }
             setTitle(data.title ? `${data.title} (Cópia)` : "");
             setGoal(data.goal || "");
-            setNotes(data.notes || "");
+            const parsed = parseNotes(data.notes);
+            const blocks = parsed.length > 0 ? parsed.map(b => ({ ...b, id: createNoteBlock().id })) : [createNoteBlock()];
+            setNoteBlocks(blocks);
+            setOpenBlockId(blocks[0].id);
           }
 
           if (Array.isArray(data.exercises) && data.exercises.length > 0) {
@@ -201,7 +212,7 @@ function NovoPlanoContent() {
           studentId,
           title,
           goal,
-          notes,
+          notes: serializeNotes(noteBlocks),
           exercises,
         }),
       });
@@ -333,20 +344,117 @@ function NovoPlanoContent() {
                     className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs min-h-[44px] text-zinc-100 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-zinc-300 block mb-1">
-                    Orientações Gerais / Aquecimento
-                  </label>
-                  <input
-                    type="text"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Ex: 5 min esteira + mobilidade articular antes"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs min-h-[44px] text-zinc-100 focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
               </div>
+            </div>
+
+            {/* Orientações por Dia/Bloco */}
+            <div className="bg-zinc-900/80 border border-zinc-800 rounded-3xl p-4 sm:p-6 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-bold text-zinc-100 text-base flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-emerald-400" />
+                    Orientações por Dia / Bloco
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    Organize por dia ou treino — ex: &ldquo;Segunda — Empurrada&rdquo;, &ldquo;Treino A&rdquo;.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newBlock = createNoteBlock();
+                    setNoteBlocks((prev) => [...prev, newBlock]);
+                    setOpenBlockId(newBlock.id);
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition active:scale-95 shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Novo Bloco</span>
+                </button>
+              </div>
+
+              {noteBlocks.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newBlock = createNoteBlock();
+                    setNoteBlocks([newBlock]);
+                    setOpenBlockId(newBlock.id);
+                  }}
+                  className="w-full py-5 rounded-2xl border-2 border-dashed border-zinc-800 hover:border-emerald-500/40 hover:bg-emerald-500/5 text-zinc-500 hover:text-emerald-400 text-xs font-semibold transition flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adicionar primeiro bloco de orientações
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  {noteBlocks.map((block) => {
+                    const isOpen = openBlockId === block.id;
+                    return (
+                      <div key={block.id} className={`border rounded-2xl overflow-hidden transition-all ${isOpen ? "border-emerald-500/30 bg-zinc-950/60" : "border-zinc-800 bg-zinc-950/30"}`}>
+                        {/* Cabeçalho clicável */}
+                        <div className="flex items-center gap-2 px-3 py-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setOpenBlockId(isOpen ? null : block.id)}
+                            className="flex items-center gap-2 flex-1 text-left min-w-0"
+                          >
+                            {isOpen
+                              ? <ChevronDown className="w-4 h-4 text-emerald-400 shrink-0" />
+                              : <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" />
+                            }
+                            <input
+                              type="text"
+                              value={block.title}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                setNoteBlocks((prev) =>
+                                  prev.map((b) => b.id === block.id ? { ...b, title: e.target.value } : b)
+                                );
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              placeholder="Ex: Segunda — Empurrada"
+                              className={`flex-1 bg-transparent text-xs font-semibold focus:outline-none placeholder:text-zinc-600 min-w-0 ${isOpen ? "text-emerald-300" : "text-zinc-300"}`}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (noteBlocks.length === 1) {
+                                setNoteBlocks([createNoteBlock()]);
+                                return;
+                              }
+                              setNoteBlocks((prev) => prev.filter((b) => b.id !== block.id));
+                              if (openBlockId === block.id) setOpenBlockId(null);
+                            }}
+                            className="text-zinc-600 hover:text-rose-400 p-1 transition shrink-0"
+                            title="Remover bloco"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Corpo (visível quando aberto) */}
+                        {isOpen && (
+                          <div className="px-3 pb-3 border-t border-zinc-800/60">
+                            <textarea
+                              value={block.content}
+                              onChange={(e) =>
+                                setNoteBlocks((prev) =>
+                                  prev.map((b) => b.id === block.id ? { ...b, content: e.target.value } : b)
+                                )
+                              }
+                              placeholder={"Ex: Aquecimento: 5 min esteira + mobilidade\nForça: Supino 4x8-10\nWOD: 3 rounds — 15 cal bike, 12 dips, 10 push-up"}
+                              rows={4}
+                              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-emerald-500 resize-none leading-relaxed placeholder:text-zinc-600 mt-2.5"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Construtor Dinâmico de Exercícios */}

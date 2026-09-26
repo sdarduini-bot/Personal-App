@@ -18,6 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/formatters";
+import { parseNotes } from "@/lib/workout-notes";
 
 interface PublicWorkoutData {
   plan: {
@@ -62,6 +63,7 @@ export default function PublicWorkoutPage() {
   const [activeTimerSeconds, setActiveTimerSeconds] = useState<number | null>(null);
   const [showTimerModal, setShowTimerModal] = useState(false);
   const [workoutFinished, setWorkoutFinished] = useState(false);
+  const [openBlockId, setOpenBlockId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchPublicWorkout() {
@@ -70,6 +72,9 @@ export default function PublicWorkoutPage() {
         if (res.ok) {
           const json = await res.json();
           setData(json);
+          // Abrir o primeiro bloco de orientações por padrão
+          const blocks = parseNotes(json?.plan?.notes);
+          if (blocks.length > 0) setOpenBlockId(blocks[0].id);
         } else {
           setError("Plano de treino não encontrado ou link expirado.");
         }
@@ -220,12 +225,41 @@ export default function PublicWorkoutPage() {
             </p>
           )}
 
-          {data.plan.notes && (
-            <div className="p-3 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 text-[11px] text-zinc-400 leading-relaxed">
-              <strong className="text-zinc-300 block mb-0.5">Orientações do Personal:</strong>
-              {data.plan.notes}
-            </div>
-          )}
+          {(() => {
+            const noteBlocks = parseNotes(data.plan.notes);
+            if (noteBlocks.length === 0) return null;
+            return (
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-bold text-zinc-400 flex items-center gap-1.5 mb-1.5">
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                  Orientações do Personal:
+                </p>
+                {noteBlocks.map((block, idx) => {
+                  const isOpen = openBlockId === block.id;
+                  return (
+                    <div key={block.id} className={`rounded-2xl border overflow-hidden transition-all ${isOpen ? "border-emerald-500/25" : "border-zinc-800/70"}`}>
+                      <button
+                        type="button"
+                        onClick={() => setOpenBlockId(isOpen ? null : block.id)}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 text-[11px] font-bold text-left transition ${isOpen ? "bg-emerald-950/30 text-emerald-300" : "bg-zinc-950/70 text-zinc-300 hover:bg-zinc-900/60"}`}
+                      >
+                        <span>{block.title || `Bloco ${idx + 1}`}</span>
+                        {isOpen
+                          ? <ChevronUp className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          : <ChevronDown className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        }
+                      </button>
+                      {isOpen && block.content && (
+                        <div className="px-3 py-2.5 border-t border-zinc-800/50 text-[11px] text-zinc-400 leading-relaxed whitespace-pre-wrap bg-zinc-950/40">
+                          {block.content}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* BARRA DE PROGRESSO DO TREINO */}
           <div className="pt-2">
