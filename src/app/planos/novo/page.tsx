@@ -57,26 +57,7 @@ function NovoPlanoContent() {
   const [loadingExisting, setLoadingExisting] = useState(Boolean(editId || cloneFromId));
   const [pickerExerciseIndex, setPickerExerciseIndex] = useState<number | null>(null);
 
-  const [exercises, setExercises] = useState<ExerciseRow[]>([
-    {
-      id: "ex_1",
-      name: "Agachamento Livre com Barra",
-      sets: "4",
-      reps: "10-12",
-      load: "50kg",
-      restSeconds: 90,
-      notes: "Controle da descida e tronco firme",
-    },
-    {
-      id: "ex_2",
-      name: "Leg Press 45º",
-      sets: "3",
-      reps: "12",
-      load: "120kg",
-      restSeconds: 60,
-      notes: "Não travar os joelhos na subida",
-    },
-  ]);
+  const [exercises, setExercises] = useState<ExerciseRow[]>([]);
 
   // Carregar dados de treino existente para Edição ou Clonagem
   useEffect(() => {
@@ -172,10 +153,6 @@ function NovoPlanoContent() {
   };
 
   const removeExercise = (index: number) => {
-    if (exercises.length <= 1) {
-      alert("O plano precisa de pelo menos 1 exercício.");
-      return;
-    }
     setExercises(exercises.filter((_, idx) => idx !== index));
   };
 
@@ -195,8 +172,8 @@ function NovoPlanoContent() {
       alert("Dê um título ao plano (ex: Treino A - Superiores).");
       return;
     }
-    if (exercises.some((ex) => !ex.name.trim())) {
-      alert("Preencha o nome de todos os exercícios.");
+    if (exercises.length > 0 && exercises.some((ex) => !ex.name.trim())) {
+      alert("Preencha o nome de todos os exercícios ou remova os vazios.");
       return;
     }
 
@@ -491,16 +468,14 @@ function NovoPlanoContent() {
                       <span className="text-xs font-bold text-emerald-400 font-mono">
                         Exercício #{idx + 1}
                       </span>
-                      {exercises.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeExercise(idx)}
-                          className="text-zinc-500 hover:text-rose-400 p-1 transition"
-                          title="Remover exercício"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeExercise(idx)}
+                        className="text-zinc-500 hover:text-rose-400 p-1 transition"
+                        title="Remover exercício"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
@@ -612,13 +587,20 @@ function NovoPlanoContent() {
                 ))}
               </div>
 
+              {exercises.length === 0 && (
+                <div className="py-6 text-center text-zinc-600 text-xs border-2 border-dashed border-zinc-800 rounded-2xl">
+                  <Dumbbell className="w-6 h-6 mx-auto mb-2 text-zinc-700" />
+                  Nenhum exercício adicionado — este plano é só de orientações.
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={addExercise}
                 className="w-full py-3 rounded-2xl border-2 border-dashed border-zinc-800 hover:border-emerald-500/50 hover:bg-emerald-500/5 text-zinc-400 hover:text-emerald-400 text-xs font-bold transition flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                <span>Adicionar Mais um Exercício</span>
+                <span>{exercises.length === 0 ? "Adicionar Exercício" : "Adicionar Mais um Exercício"}</span>
               </button>
             </div>
 
