@@ -1,0 +1,52 @@
+# ==========================================
+# docker-compose.yml — Trainer Pro
+# Serviços: app Next.js + PostgreSQL
+# Porta: 3335 (compatível com Psicogestão que usa 3333/3334)
+# ==========================================
+
+services:
+
+  # ------------------------------------------
+  # Banco de dados PostgreSQL
+  # ------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: trainer_pro_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: trainer_pro
+      POSTGRES_USER: trainer_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trainer_user -d trainer_pro"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Não expõe porta ao host por segurança — só acessível internamente pelo app
+
+  # ------------------------------------------
+  # App Next.js — Trainer Pro
+  # Acesso: https://SEU_SUBDOMINIO.seudominio.com.br
+  # ------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: trainer-pro:latest
+    container_name: trainer_pro_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3335:3000"
+    volumes:
+      # Volume persistente para fotos de avaliação
+      - ./data/uploads:/app/public/uploads
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://trainer_user:${DB_PASSWORD}@db:5432/trainer_pro
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${APP_URL}
