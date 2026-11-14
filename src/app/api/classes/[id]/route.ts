@@ -69,6 +69,39 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const url = new URL(req.url);
+    const scope = url.searchParams.get("scope") || "single"; // "single" | "future" | "all"
+
+    const existingClass = await prisma.classSchedule.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!existingClass) {
+      return NextResponse.json({ error: "Aula não encontrada" }, { status: 404 });
+    }
+
+    if (existingClass.recurringGroupId && scope !== "single") {
+      let whereClause: any = {
+        recurringGroupId: existingClass.recurringGroupId,
+      };
+
+      if (scope === "future") {
+        // Exclui esta e todas as posteriores (mesmo dia ou depois)
+        whereClause.date = { gte: existingClass.date };
+      }
+
+      const deletedCount = await prisma.classSchedule.deleteMany({
+        where: whereClause,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `${deletedCount.count} aulas desmarcadas com sucesso`,
+        deletedCount: deletedCount.count,
+      });
+    }
+
+    // Exclusão de aula única
     await prisma.classSchedule.delete({
       where: { id: params.id },
     });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { addWeeks, format } from "date-fns";
+import { addWeeks, addDays, format, parseISO } from "date-fns";
 import { bookingMutex } from "@/lib/mutex";
 import { getTrainerSession } from "@/lib/auth-trainer";
 
@@ -132,25 +132,63 @@ export async function POST(req: Request) {
         }
       }
 
+      // Agendamento Recorrente (Semanal ou Multi-Dias)
       const recurringWeeks = parseInt(data.recurringWeeks) || 1;
+      const daysOfWeek: number[] = Array.isArray(data.daysOfWeek) && data.daysOfWeek.length > 0
+        ? data.daysOfWeek.map((d: any) => Number(d))
+        : [];
 
-      if (recurringWeeks > 1) {
+      if (recurringWeeks > 1 || daysOfWeek.length > 0) {
         const recurringGroupId = `rec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        const baseDate = new Date(`${data.date}T12:00:00`);
+        const baseDate = parseISO(data.date);
         const createdClasses = [];
+        const plannedSlots: Array<{ dateStr: string; startTime: string; endTime: string }> = [];
 
-        for (let i = 0; i < recurringWeeks; i++) {
-          const nextDate = addWeeks(baseDate, i);
-          const dateStr = format(nextDate, "yyyy-MM-dd");
+        if (daysOfWeek.length > 0) {
+          // Gerar pelas próximas X semanas para os dias da semana selecionados (0=Dom, 1=Seg... 6=Sáb)
+          // Considera a semana base iniciando no domingo anterior ou no dia selecionado
+          for (let w = 0; w < recurringWeeks; w++) {
+            for (const targetDay of daysOfWeek) {
+              const baseDayOfWeek = baseDate.getDay();
+              const diffDays = targetDay - baseDayOfWeek;
+              const slotDate = addDays(baseDate, w * 7 + diffDays);
+              const dateStr = format(slotDate, "yyyy-MM-dd");
 
+              // Não agendar datas retroativas em relação ao dia base inicial
+              if (w === 0 && diffDays < 0) continue;
+
+              plannedSlots.push({
+                dateStr,
+                startTime: data.startTime,
+                endTime: endTime,
+              });
+            }
+          }
+        } else {
+          // Recorrência padrão no mesmo dia da semana
+          for (let i = 0; i < recurringWeeks; i++) {
+            const nextDate = addWeeks(baseDate, i);
+            plannedSlots.push({
+              dateStr: format(nextDate, "yyyy-MM-dd"),
+              startTime: data.startTime,
+              endTime: endTime,
+            });
+          }
+        }
+
+        // Ordenar por data
+        plannedSlots.sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+
+        // Inserir cada aula
+        for (const slot of plannedSlots) {
           const cls = await prisma.classSchedule.create({
             data: {
               trainerId: trainer.id,
               studentId: data.studentId,
               title: data.title?.trim() || null,
-              date: dateStr,
-              startTime: data.startTime,
-              endTime: endTime,
+              date: slot.dateStr,
+              startTime: slot.startTime,
+              endTime: slot.endTime,
               location: data.location || "ACADEMIA",
               status: "SCHEDULED",
               notes: data.notes?.trim() || null,
@@ -168,7 +206,7 @@ export async function POST(req: Request) {
             success: true,
             count: createdClasses.length,
             classes: createdClasses,
-            message: `${createdClasses.length} aulas agendadas com sucesso nas próximas semanas!`,
+            message: `${createdClasses.length} aulas agendadas com sucesso!`,
           },
           { status: 201 }
         );

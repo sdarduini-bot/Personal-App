@@ -51,6 +51,7 @@ interface ClassItem {
   location: string;
   status: string;
   notes: string | null;
+  recurringGroupId?: string | null;
   student: {
     id: string;
     name: string;
@@ -179,9 +180,14 @@ function AgendaContent() {
     endTime: "09:00",
     location: "ACADEMIA",
     recurringWeeks: "1",
+    daysOfWeek: [] as number[], // [1, 3, 5] (1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb, 0=Dom)
     notes: "",
     allowOverlap: false,
   });
+
+  // Modal de Exclusão Inteligente (Aula Única vs Recorrente)
+  const [classToDelete, setClassToDelete] = useState<ClassItem | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Fichas de treino inteligentes para seleção no modal de agendamento
   const [studentWorkouts, setStudentWorkouts] = useState<Array<{ id: string; title: string; exercisesCount?: number }>>([]);
@@ -316,18 +322,33 @@ function AgendaContent() {
     }
   };
 
-  // Excluir aula
-  const handleDeleteClass = async (classId: string) => {
-    if (!confirm("Deseja realmente desmarcar esta aula?")) return;
+  // Excluir aula (abre modal inteligente se for recorrente ou confirma direto)
+  const handleDeleteClass = (cls: ClassItem) => {
+    if (cls.recurringGroupId) {
+      setClassToDelete(cls);
+    } else {
+      if (!confirm(`Deseja realmente desmarcar a aula de ${cls.student.name}?`)) return;
+      executeDelete(cls.id, "single");
+    }
+  };
+
+  const executeDelete = async (classId: string, scope: "single" | "future" | "all") => {
+    setDeleteLoading(true);
     try {
-      const res = await fetch(`/api/classes/${classId}`, { method: "DELETE" });
+      const res = await fetch(`/api/classes/${classId}?scope=${scope}`, { method: "DELETE" });
       if (res.ok) {
         clearCache("/api/classes");
         clearCache("/api/dashboard");
+        setClassToDelete(null);
         fetchClasses();
+      } else {
+        alert("Erro ao excluir aula.");
       }
     } catch (err) {
       console.error(err);
+      alert("Erro de conexão ao excluir aula.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -1156,7 +1177,7 @@ function AgendaContent() {
 
                                       <button
                                         type="button"
-                                        onClick={() => handleDeleteClass(cls.id)}
+                                        onClick={() => handleDeleteClass(cls)}
                                         className="p-2 text-zinc-500 hover:text-rose-400 rounded-xl hover:bg-zinc-800 transition"
                                         title="Desmarcar aula"
                                       >
@@ -1400,7 +1421,7 @@ function AgendaContent() {
 
                               <button
                                 type="button"
-                                onClick={() => handleDeleteClass(cls.id)}
+                                onClick={() => handleDeleteClass(cls)}
                                 className="p-2.5 text-zinc-500 hover:text-rose-400 rounded-xl hover:bg-zinc-800 transition min-h-[40px] flex items-center justify-center"
                                 title="Desmarcar aula"
                               >
@@ -1852,22 +1873,88 @@ function AgendaContent() {
                     </div>
                   </div>
 
-                  {/* Recorrência Semanal */}
-                  <div>
-                    <label className="text-xs font-semibold text-zinc-300 block mb-1 flex items-center gap-1.5">
-                      <Repeat className="w-3.5 h-3.5 text-emerald-400" />
-                      Repetir Semanalmente
-                    </label>
-                    <select
-                      value={modalForm.recurringWeeks}
-                      onChange={(e) => setModalForm({ ...modalForm, recurringWeeks: e.target.value })}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs min-h-[44px] text-zinc-100 focus:outline-none focus:border-emerald-500"
-                    >
-                      <option value="1">Apenas nesta data (Aula única)</option>
-                      <option value="4">Repetir por 4 semanas (1 mês)</option>
-                      <option value="8">Repetir por 8 semanas (2 meses)</option>
-                      <option value="12">Repetir por 12 semanas (3 meses)</option>
-                    </select>
+                  {/* Recorrência Semanal e Multi-Dias */}
+                  <div className="space-y-2.5 p-3.5 rounded-2xl bg-zinc-950/70 border border-zinc-800">
+                    <div>
+                      <label className="text-xs font-semibold text-zinc-300 block mb-1 flex items-center gap-1.5">
+                        <Repeat className="w-3.5 h-3.5 text-emerald-400" />
+                        Duração da Recorrência
+                      </label>
+                      <select
+                        value={modalForm.recurringWeeks}
+                        onChange={(e) => setModalForm({ ...modalForm, recurringWeeks: e.target.value })}
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs min-h-[44px] text-zinc-100 focus:outline-none focus:border-emerald-500"
+                      >
+                        <option value="1">Apenas na data selecionada (Aula única)</option>
+                        <option value="4">Repetir por 4 semanas (1 mês)</option>
+                        <option value="8">Repetir por 8 semanas (2 meses)</option>
+                        <option value="12">Repetir por 12 semanas (3 meses)</option>
+                        <option value="16">Repetir por 16 semanas (4 meses)</option>
+                        <option value="24">Repetir por 24 semanas (6 meses)</option>
+                      </select>
+                    </div>
+
+                    {/* Seleção de Múltiplos Dias da Semana */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[11px] font-semibold text-zinc-300">
+                          Dias da Semana (Opcional)
+                        </label>
+                        <span className="text-[10px] text-zinc-500">
+                          {modalForm.daysOfWeek.length > 0
+                            ? `${modalForm.daysOfWeek.length} dia(s) selecionado(s)`
+                            : "Mesmo dia da data"}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-7 gap-1">
+                        {[
+                          { label: "Dom", day: 0 },
+                          { label: "Seg", day: 1 },
+                          { label: "Ter", day: 2 },
+                          { label: "Qua", day: 3 },
+                          { label: "Qui", day: 4 },
+                          { label: "Sex", day: 5 },
+                          { label: "Sáb", day: 6 },
+                        ].map((item) => {
+                          const isSelected = modalForm.daysOfWeek.includes(item.day);
+                          return (
+                            <button
+                              key={item.day}
+                              type="button"
+                              onClick={() => {
+                                setModalForm((prev) => {
+                                  const exists = prev.daysOfWeek.includes(item.day);
+                                  const updated = exists
+                                    ? prev.daysOfWeek.filter((d) => d !== item.day)
+                                    : [...prev.daysOfWeek, item.day].sort((a, b) => a - b);
+                                  return {
+                                    ...prev,
+                                    daysOfWeek: updated,
+                                    // Se selecionou dias e estava como 1 semana, sugere 4 semanas por padrão
+                                    recurringWeeks:
+                                      updated.length > 0 && prev.recurringWeeks === "1"
+                                        ? "4"
+                                        : prev.recurringWeeks,
+                                  };
+                                });
+                              }}
+                              className={`py-2 rounded-xl text-xs font-bold border transition ${
+                                isSelected
+                                  ? "bg-emerald-500 text-zinc-950 border-emerald-400 font-black shadow-sm"
+                                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
+                              }`}
+                            >
+                              {item.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {modalForm.daysOfWeek.length > 0 && (
+                        <p className="text-[10px] text-emerald-400/90 mt-1.5">
+                          💡 As aulas serão geradas nos dias selecionados no mesmo horário por {modalForm.recurringWeeks} semanas.
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -2432,6 +2519,114 @@ function AgendaContent() {
               onClose={() => setActiveShareWorkout(null)}
               workout={activeShareWorkout}
             />
+          )}
+
+          {/* ========================================================= */}
+          {/* 8.2 MODAL INTELIGENTE DE EXCLUSÃO DE AULA RECORRENTE      */}
+          {/* ========================================================= */}
+          {classToDelete && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/85 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md p-5 sm:p-6 space-y-4 my-auto shadow-2xl">
+                <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                      <Trash2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-zinc-100 text-sm sm:text-base">Desmarcar Aula Recorrente</h3>
+                      <p className="text-[11px] text-zinc-400">Esta aula faz parte de uma série recorrente</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setClassToDelete(null)}
+                    disabled={deleteLoading}
+                    className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xl transition"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-400">Aluno:</span>
+                    <span className="font-bold text-zinc-200">{classToDelete.student.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-400">Data e Horário:</span>
+                    <span className="font-bold text-emerald-400">
+                      {formatDateShort(classToDelete.date)} às {classToDelete.startTime} - {classToDelete.endTime}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-zinc-300">Escolha o que deseja desmarcar:</p>
+
+                  <button
+                    type="button"
+                    disabled={deleteLoading}
+                    onClick={() => executeDelete(classToDelete.id, "single")}
+                    className="w-full text-left p-3.5 rounded-2xl bg-zinc-950 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 transition flex items-start gap-3 group"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                    <div>
+                      <span className="font-bold text-zinc-200 text-xs block group-hover:text-emerald-400 transition">
+                        Apenas esta aula
+                      </span>
+                      <span className="text-[11px] text-zinc-400">
+                        Desmarca somente a aula deste dia específico ({formatDateShort(classToDelete.date)}). As outras semanas continuam agendadas.
+                      </span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={deleteLoading}
+                    onClick={() => executeDelete(classToDelete.id, "future")}
+                    className="w-full text-left p-3.5 rounded-2xl bg-zinc-950 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 transition flex items-start gap-3 group"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 shrink-0" />
+                    <div>
+                      <span className="font-bold text-zinc-200 text-xs block group-hover:text-amber-400 transition">
+                        Esta e todas as próximas
+                      </span>
+                      <span className="text-[11px] text-zinc-400">
+                        Ideal se o aluno cancelou ou mudou de plano. Mantém o histórico passado e cancela daqui para frente.
+                      </span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={deleteLoading}
+                    onClick={() => executeDelete(classToDelete.id, "all")}
+                    className="w-full text-left p-3.5 rounded-2xl bg-zinc-950 hover:bg-rose-950/20 border border-zinc-800 hover:border-rose-500/30 transition flex items-start gap-3 group"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-rose-400 mt-1.5 shrink-0" />
+                    <div>
+                      <span className="font-bold text-zinc-200 text-xs block group-hover:text-rose-400 transition">
+                        Todas as aulas da série
+                      </span>
+                      <span className="text-[11px] text-zinc-400">
+                        Exclui todas as aulas vinculadas a este agendamento recorrente.
+                      </span>
+                    </div>
+                  </button>
+                </div>
+
+                <div className="flex justify-end pt-2 border-t border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setClassToDelete(null)}
+                    disabled={deleteLoading}
+                    className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-300 min-h-[44px] transition"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* ========================================================= */}
