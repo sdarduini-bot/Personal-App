@@ -1,11 +1,5 @@
 node_modules
-.next/cache
+.next
 .git
 *.log
 scratch
-data
-deploy/.env.server
-prisma/*.db
-prisma/dev.db
-.env.local
-.env.production
