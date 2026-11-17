@@ -659,24 +659,24 @@ function AgendaContent() {
           {/* 1. BARRA SUPERIOR DE CONTROLE E NAVEGAÇÃO                 */}
           {/* ========================================================= */}
           <div className="bg-zinc-900/90 border border-zinc-800 rounded-3xl p-3 sm:p-4 space-y-3 shadow-sm">
-            {/* Linha Principal: Mês, Setas, Botão Hoje, Visões e Nova Aula */}
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Linha 1 no Mobile: Navegação de Mês e Botão Hoje */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => changeDate(viewMode === "dia" ? -1 : -7)}
-                  className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
+                  className="p-1.5 sm:p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
                   title="Anterior"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-sm sm:text-base font-bold text-zinc-100 capitalize font-mono">
+                <span className="text-xs sm:text-base font-bold text-zinc-100 capitalize font-mono">
                   {format(currentParsedDate, "MMMM yyyy", { locale: ptBR })}
                 </span>
                 <button
                   type="button"
                   onClick={() => changeDate(viewMode === "dia" ? 1 : 7)}
-                  className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
+                  className="p-1.5 sm:p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
                   title="Próximo"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -685,46 +685,60 @@ function AgendaContent() {
                 <button
                   type="button"
                   onClick={() => setSelectedDate(format(new Date(), "yyyy-MM-dd"))}
-                  className="ml-1 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-emerald-400 transition"
+                  className="ml-1 px-2.5 py-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-emerald-400 transition"
                 >
                   Hoje
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
-                {/* Alternador de Visões: Dia | Semana | Lista */}
-                <div className="flex rounded-xl bg-zinc-950 border border-zinc-800 p-0.5">
-                  {[
-                    { id: "dia", label: "Dia" },
-                    { id: "semana", label: "Semana" },
-                    { id: "lista", label: "Lista" },
-                  ].map((mode) => (
-                    <button
-                      key={mode.id}
-                      onClick={() => setViewMode(mode.id as any)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                        viewMode === mode.id
-                          ? "bg-zinc-800 text-zinc-100 shadow-sm font-bold"
-                          : "text-zinc-400 hover:text-zinc-200"
-                      }`}
-                    >
-                      {mode.label}
-                    </button>
-                  ))}
-                </div>
+              {/* Botão Nova Aula (Desktop / Header) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setModalForm((prev) => ({ ...prev, date: selectedDate }));
+                  setIsModalOpen(true);
+                }}
+                className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-zinc-950 font-bold text-xs transition shadow-md shadow-emerald-600/20"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nova Aula</span>
+              </button>
+            </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalForm((prev) => ({ ...prev, date: selectedDate }));
-                    setIsModalOpen(true);
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-zinc-950 font-bold text-xs transition shadow-md shadow-emerald-600/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Nova Aula</span>
-                </button>
+            {/* Linha 2 no Mobile: Alternador Único de Visões (Dia | Semana | Lista) */}
+            <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/50 sm:border-0 sm:pt-0">
+              <div className="flex rounded-xl bg-zinc-950 border border-zinc-800 p-0.5 w-full sm:w-auto">
+                {[
+                  { id: "dia", label: "Dia" },
+                  { id: "semana", label: "Semana" },
+                  { id: "lista", label: "Lista" },
+                ].map((mode) => (
+                  <button
+                    key={mode.id}
+                    onClick={() => setViewMode(mode.id as any)}
+                    className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-semibold transition text-center ${
+                      viewMode === mode.id
+                        ? "bg-zinc-800 text-zinc-100 shadow-sm font-bold"
+                        : "text-zinc-400 hover:text-zinc-200"
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
               </div>
+
+              {/* Botão Nova Aula visível no mobile na mesma barra */}
+              <button
+                type="button"
+                onClick={() => {
+                  setModalForm((prev) => ({ ...prev, date: selectedDate }));
+                  setIsModalOpen(true);
+                }}
+                className="sm:hidden flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-zinc-950 font-bold text-xs transition shadow-sm shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Aula</span>
+              </button>
             </div>
 
             {/* Fita Compacta de Dias: visível apenas na visualização "Dia" para não poluir a Semana */}
@@ -770,46 +784,23 @@ function AgendaContent() {
           </div>
 
           {/* Barra de Filtro de Alunos */}
-          <div className="flex items-center justify-between gap-3 px-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-400 flex items-center gap-1.5 font-medium">
-                <Users className="w-3.5 h-3.5 text-zinc-500" />
-                Filtrar:
-              </span>
-              <select
-                value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
-                className="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
-              >
-                <option value="ALL">Todos os alunos</option>
-                {students.map((st) => (
-                  <option key={st.id} value={st.id}>
-                    {st.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Alternador Mobile (Dia / Semana / Lista) */}
-            <div className="flex sm:hidden rounded-xl bg-zinc-900 border border-zinc-800 p-0.5">
-              {[
-                { id: "dia", label: "Dia" },
-                { id: "semana", label: "Sem." },
-                { id: "lista", label: "Lista" },
-              ].map((mode) => (
-                <button
-                  key={mode.id}
-                  onClick={() => setViewMode(mode.id as any)}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition ${
-                    viewMode === mode.id
-                      ? "bg-zinc-800 text-zinc-100 font-bold"
-                      : "text-zinc-400"
-                  }`}
-                >
-                  {mode.label}
-                </button>
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-xs text-zinc-400 flex items-center gap-1.5 font-medium">
+              <Users className="w-3.5 h-3.5 text-zinc-500" />
+              Filtrar:
+            </span>
+            <select
+              value={selectedStudentId}
+              onChange={(e) => setSelectedStudentId(e.target.value)}
+              className="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
+            >
+              <option value="ALL">Todos os alunos</option>
+              {students.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.name}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
           {/* ========================================================= */}
@@ -1532,14 +1523,14 @@ function AgendaContent() {
             <div className="space-y-4">
               {/* Tabela Grade Horária Semanal (Estilo Synapsis Clínico / Agenda Inteligente) */}
               <div className="rounded-3xl bg-zinc-900/80 border border-zinc-800 shadow-2xl overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-[75vh] overflow-y-auto">
                   <div className="min-w-[840px]">
-                    {/* Header: Coluna Horário + 7 Dias da Semana */}
+                    {/* Header Fixo Sticky: Coluna Horário + 7 Dias da Semana */}
                     <div
-                      className="grid border-b border-zinc-800 bg-zinc-950/80 sticky top-0 z-10"
+                      className="grid border-b border-zinc-800 bg-zinc-950 sticky top-0 z-20 shadow-md"
                       style={{ gridTemplateColumns: "72px repeat(7, minmax(0, 1fr))" }}
                     >
-                      <div className="py-3 px-2 text-[11px] font-bold uppercase tracking-wider text-zinc-500 border-r border-zinc-800 flex items-center justify-center select-none">
+                      <div className="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-zinc-500 border-r border-zinc-800 flex items-center justify-center select-none bg-zinc-950">
                         Horário
                       </div>
                       {weekDays.map((dayDate, dayIdx) => {
@@ -1552,7 +1543,7 @@ function AgendaContent() {
                           <div
                             key={dayStr}
                             onClick={() => setSelectedDate(dayStr)}
-                            className={`py-2.5 px-2 text-center cursor-pointer transition select-none ${
+                            className={`py-2 px-1 text-center cursor-pointer transition select-none bg-zinc-950 ${
                               dayIdx === 6 ? "border-r-0" : "border-r border-zinc-800"
                             } ${
                               isSelected
@@ -1562,11 +1553,11 @@ function AgendaContent() {
                                 : "hover:bg-zinc-800/30 text-zinc-300"
                             }`}
                           >
-                            <div className="flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-wider">
+                            <div className="flex items-center justify-center gap-1 text-[11px] font-black uppercase tracking-wider">
                               <span className={isSelected ? "text-emerald-400" : isCurrentToday ? "text-emerald-400" : "text-zinc-400"}>
                                 {format(dayDate, "EEE", { locale: ptBR })}
                               </span>
-                              <span className="text-zinc-600 font-normal">•</span>
+                              <span className="text-zinc-600 font-normal">-</span>
                               <span
                                 className={`font-mono ${
                                   isSelected
@@ -1579,7 +1570,7 @@ function AgendaContent() {
                                 {format(dayDate, "dd/MM")}
                               </span>
                             </div>
-                            <div className="text-[10px] text-zinc-500 mt-0.5">
+                            <div className="text-[9px] text-zinc-500 mt-0.5">
                               {dayClassesCount} {dayClassesCount === 1 ? "aula" : "aulas"}
                             </div>
                           </div>
