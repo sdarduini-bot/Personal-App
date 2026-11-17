@@ -60,6 +60,74 @@ interface ClassItem {
   };
 }
 
+// Cores vibrantes elegantes para identificação visual rápida de alunos (Padrão Synapsis / PsicoManager)
+const STUDENT_PALETTES = [
+  {
+    bg: "bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25",
+    badge: "bg-emerald-500 text-zinc-950",
+    accent: "text-emerald-400",
+    border: "border-l-emerald-400",
+  },
+  {
+    bg: "bg-sky-500/15 text-sky-300 border-sky-500/40 hover:bg-sky-500/25",
+    badge: "bg-sky-500 text-zinc-950",
+    accent: "text-sky-400",
+    border: "border-l-sky-400",
+  },
+  {
+    bg: "bg-violet-500/15 text-violet-300 border-violet-500/40 hover:bg-violet-500/25",
+    badge: "bg-violet-500 text-white",
+    accent: "text-violet-400",
+    border: "border-l-violet-400",
+  },
+  {
+    bg: "bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25",
+    badge: "bg-amber-500 text-zinc-950",
+    accent: "text-amber-400",
+    border: "border-l-amber-400",
+  },
+  {
+    bg: "bg-rose-500/15 text-rose-300 border-rose-500/40 hover:bg-rose-500/25",
+    badge: "bg-rose-500 text-white",
+    accent: "text-rose-400",
+    border: "border-l-rose-400",
+  },
+  {
+    bg: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/40 hover:bg-fuchsia-500/25",
+    badge: "bg-fuchsia-500 text-white",
+    accent: "text-fuchsia-400",
+    border: "border-l-fuchsia-400",
+  },
+  {
+    bg: "bg-indigo-500/15 text-indigo-300 border-indigo-500/40 hover:bg-indigo-500/25",
+    badge: "bg-indigo-500 text-white",
+    accent: "text-indigo-400",
+    border: "border-l-indigo-400",
+  },
+  {
+    bg: "bg-teal-500/15 text-teal-300 border-teal-500/40 hover:bg-teal-500/25",
+    badge: "bg-teal-500 text-zinc-950",
+    accent: "text-teal-400",
+    border: "border-l-teal-400",
+  },
+  {
+    bg: "bg-orange-500/15 text-orange-300 border-orange-500/40 hover:bg-orange-500/25",
+    badge: "bg-orange-500 text-zinc-950",
+    accent: "text-orange-400",
+    border: "border-l-orange-400",
+  },
+];
+
+function getStudentColor(studentName: string) {
+  if (!studentName) return STUDENT_PALETTES[0];
+  let hash = 0;
+  for (let i = 0; i < studentName.length; i++) {
+    hash = studentName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % STUDENT_PALETTES.length;
+  return STUDENT_PALETTES[index];
+}
+
 function parseMinutes(timeStr: string): number {
   if (!timeStr || !timeStr.includes(":")) return 0;
   const [h, m] = timeStr.split(":").map(Number);
@@ -105,9 +173,9 @@ const TIMELINE_HOURS = [
 function AgendaContent() {
   const searchParams = useSearchParams();
 
-  // Data selecionada (padrão hoje: 2026-09-19)
-  const [selectedDate, setSelectedDate] = useState("2026-09-19");
-  const [viewMode, setViewMode] = useState<"dia" | "semana" | "lista">("dia");
+  // Data selecionada (padrão hoje dinâmica)
+  const [selectedDate, setSelectedDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  const [viewMode, setViewMode] = useState<"dia" | "semana" | "lista">("semana");
   const [dayDisplayMode, setDayDisplayMode] = useState<"grade" | "lista">("grade");
   const [timelineResolution, setTimelineResolution] = useState<"15" | "30" | "60">("60");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("ALL");
@@ -172,10 +240,10 @@ function AgendaContent() {
   // Modal de agendamento novo
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
-  const [modalForm, setModalForm] = useState({
+  const [modalForm, setModalForm] = useState(() => ({
     studentId: "",
     title: "",
-    date: "2026-09-19",
+    date: format(new Date(), "yyyy-MM-dd"),
     startTime: "08:00",
     endTime: "09:00",
     location: "ACADEMIA",
@@ -183,7 +251,7 @@ function AgendaContent() {
     daysOfWeek: [] as number[], // [1, 3, 5] (1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb, 0=Dom)
     notes: "",
     allowOverlap: false,
-  });
+  }));
 
   // Modal de Exclusão Inteligente (Aula Única vs Recorrente)
   const [classToDelete, setClassToDelete] = useState<ClassItem | null>(null);
@@ -618,7 +686,7 @@ function AgendaContent() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setSelectedDate("2026-09-19")}
+                  onClick={() => setSelectedDate(format(new Date(), "yyyy-MM-dd"))}
                   className="px-3 py-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-emerald-400 transition"
                 >
                   Hoje
@@ -664,7 +732,7 @@ function AgendaContent() {
               {weekDays.map((dayDate) => {
                 const dayStr = format(dayDate, "yyyy-MM-dd");
                 const isSelected = dayStr === selectedDate;
-                const isCurrentToday = dayStr === "2026-09-19";
+                const isCurrentToday = isToday(dayDate);
 
                 return (
                   <button
@@ -1035,6 +1103,7 @@ function AgendaContent() {
                               {classesInSlot.map((cls) => {
                                 const isCompleted = cls.status === "COMPLETED";
                                 const isSelectedThis = selectedForMove?.id === cls.id || draggedClass?.id === cls.id;
+                                const studentColor = getStudentColor(cls.student.name);
                                 const waMessage = `Olá, ${cls.student.name.split(" ")[0]}! Confirmando nossa aula hoje às ${cls.startTime}. Nos vemos lá! 💪`;
                                 const waLink = buildWhatsAppLink(cls.student.phone, waMessage);
 
@@ -1054,7 +1123,7 @@ function AgendaContent() {
                                     onTouchStart={(e) => handleTouchStart(cls, e)}
                                     onTouchMove={handleTouchMove}
                                     onTouchEnd={handleTouchEnd}
-                                    className={`p-3 rounded-2xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-grab active:cursor-grabbing select-none ${
+                                    className={`p-3 rounded-2xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-grab active:cursor-grabbing select-none border-l-4 ${studentColor.border} ${
                                       isCompleted
                                         ? "bg-zinc-900/60 border-zinc-800/70 opacity-85"
                                         : "bg-zinc-900 border-zinc-700/80 hover:border-emerald-500/40 shadow-sm"
@@ -1085,7 +1154,7 @@ function AgendaContent() {
                                         <GripVertical className="w-4 h-4" />
                                       </button>
 
-                                      <div className="w-10 h-10 rounded-2xl bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-zinc-200 shrink-0">
+                                      <div className={`w-10 h-10 rounded-2xl font-black text-sm flex items-center justify-center shrink-0 ${studentColor.badge}`}>
                                         {cls.student.name.charAt(0).toUpperCase()}
                                       </div>
 
@@ -1095,7 +1164,7 @@ function AgendaContent() {
                                             href={`/alunos/${cls.student.id}`}
                                             draggable={false}
                                             onClick={(e) => e.stopPropagation()}
-                                            className="font-bold text-zinc-100 text-sm hover:text-emerald-400 transition truncate"
+                                            className={`font-bold text-sm transition truncate ${studentColor.accent} hover:underline`}
                                           >
                                             {cls.student.name}
                                           </Link>
@@ -1459,70 +1528,216 @@ function AgendaContent() {
           )}
 
           {/* ========================================================= */}
-          {/* 4. VISUALIZAÇÃO SEMANAL (7 COLUNAS)                       */}
+          {/* 4. VISUALIZAÇÃO SEMANAL (AGENDA INTELIGENTE - GRADE GRID) */}
           {/* ========================================================= */}
           {viewMode === "semana" && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                {weekDays.map((dayDate) => {
-                  const dayStr = format(dayDate, "yyyy-MM-dd");
-                  const dayClasses = classes.filter((c) => c.date === dayStr);
-                  const isSelected = dayStr === selectedDate;
-                  const isCurrentToday = dayStr === "2026-09-19";
-
-                  return (
+              {/* Tabela Grade Horária Semanal (Estilo Synapsis Clínico / Agenda Inteligente) */}
+              <div className="rounded-3xl bg-zinc-900/80 border border-zinc-800 shadow-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <div className="min-w-[840px]">
+                    {/* Header: Coluna Horário + 7 Dias da Semana */}
                     <div
-                      key={dayStr}
-                      onClick={() => {
-                        setSelectedDate(dayStr);
-                        setViewMode("dia");
-                      }}
-                      className={`p-3.5 rounded-3xl border transition cursor-pointer flex flex-col justify-between min-h-[160px] ${
-                        isSelected
-                          ? "bg-zinc-900 border-emerald-500/50 shadow-md shadow-emerald-500/10"
-                          : isCurrentToday
-                          ? "bg-zinc-900/80 border-zinc-700"
-                          : "bg-zinc-900/40 border-zinc-800/80 hover:bg-zinc-900/70"
-                      }`}
+                      className="grid border-b border-zinc-800 bg-zinc-950/80 sticky top-0 z-10"
+                      style={{ gridTemplateColumns: "72px repeat(7, minmax(0, 1fr))" }}
                     >
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-zinc-400 uppercase">
-                            {format(dayDate, "EEE", { locale: ptBR })}
-                          </span>
-                          {isCurrentToday && (
-                            <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
-                              Hoje
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-base font-black text-zinc-100 font-mono">
-                          {format(dayDate, "dd/MM")}
-                        </span>
+                      <div className="py-3 px-2 text-[11px] font-bold uppercase tracking-wider text-zinc-500 border-r border-zinc-800 flex items-center justify-center select-none">
+                        Horário
                       </div>
+                      {weekDays.map((dayDate, dayIdx) => {
+                        const dayStr = format(dayDate, "yyyy-MM-dd");
+                        const isSelected = dayStr === selectedDate;
+                        const isCurrentToday = isToday(dayDate);
+                        const dayClassesCount = classes.filter((c) => c.date === dayStr).length;
 
-                      <div className="my-2 space-y-1.5 flex-1">
-                        {dayClasses.map((c) => (
+                        return (
                           <div
-                            key={c.id}
-                            className="p-1.5 rounded-xl bg-zinc-950 border border-zinc-800/80 text-[10px]"
+                            key={dayStr}
+                            onClick={() => setSelectedDate(dayStr)}
+                            className={`py-2.5 px-2 text-center cursor-pointer transition select-none ${
+                              dayIdx === 6 ? "border-r-0" : "border-r border-zinc-800"
+                            } ${
+                              isSelected
+                                ? "bg-emerald-500/10 border-b-2 border-b-emerald-400"
+                                : isCurrentToday
+                                ? "bg-zinc-800/40 text-emerald-400"
+                                : "hover:bg-zinc-800/30 text-zinc-300"
+                            }`}
                           >
-                            <span className="font-bold text-emerald-400 font-mono block">
-                              {c.startTime}
-                            </span>
-                            <span className="text-zinc-200 truncate block font-medium">
-                              {c.student.name.split(" ")[0]}
-                            </span>
+                            <div className="flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-wider">
+                              <span className={isSelected ? "text-emerald-400" : isCurrentToday ? "text-emerald-400" : "text-zinc-400"}>
+                                {format(dayDate, "EEE", { locale: ptBR })}
+                              </span>
+                              <span className="text-zinc-600 font-normal">•</span>
+                              <span
+                                className={`font-mono ${
+                                  isSelected
+                                    ? "text-emerald-300 font-black underline underline-offset-4 decoration-2"
+                                    : isCurrentToday
+                                    ? "text-emerald-400 font-extrabold"
+                                    : "text-zinc-100"
+                                }`}
+                              >
+                                {format(dayDate, "dd/MM")}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-zinc-500 mt-0.5">
+                              {dayClassesCount} {dayClassesCount === 1 ? "aula" : "aulas"}
+                            </div>
                           </div>
-                        ))}
-                      </div>
-
-                      <span className="text-[10px] text-zinc-500 font-medium">
-                        {dayClasses.length} {dayClasses.length === 1 ? "aula" : "aulas"}
-                      </span>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+
+                    {/* Grade Horária Dinâmica: Das 06:00 às 22:00 */}
+                    <div
+                      className="grid relative divide-y divide-zinc-800/60"
+                      style={{ gridTemplateColumns: "72px repeat(7, minmax(0, 1fr))" }}
+                    >
+                      {Array.from({ length: 17 }, (_, i) => i + 6).map((hour) => {
+                        const hourStr = `${String(hour).padStart(2, "0")}:00`;
+                        const nextHourStr = `${String(hour + 1).padStart(2, "0")}:00`;
+
+                        return (
+                          <React.Fragment key={hour}>
+                            {/* Coluna do Horário */}
+                            <div className="py-3 px-2 text-right pr-3 text-[11px] font-mono font-bold text-zinc-500 bg-zinc-950/40 border-r border-zinc-800 select-none flex items-start justify-end">
+                              {hourStr}
+                            </div>
+
+                            {/* 7 Colunas de Dias para esta hora */}
+                            {weekDays.map((dayDate, dayIdx) => {
+                              const dayStr = format(dayDate, "yyyy-MM-dd");
+                              const isSelected = dayStr === selectedDate;
+                              const isCurrentToday = isToday(dayDate);
+
+                              // Aulas que começam nesta hora neste dia
+                              const hourClasses = classes.filter((c) => {
+                                if (c.date !== dayStr) return false;
+                                const [h] = c.startTime.split(":").map(Number);
+                                return h === hour;
+                              });
+
+                              return (
+                                <div
+                                  key={`${dayStr}-${hour}`}
+                                  onClick={(e) => {
+                                    // Se clicou no fundo do slot vazio, abre modal para criar aula nesta data/hora
+                                    if (e.target === e.currentTarget) {
+                                      setModalForm((prev) => ({
+                                        ...prev,
+                                        date: dayStr,
+                                        startTime: hourStr,
+                                        endTime: nextHourStr,
+                                      }));
+                                      setIsModalOpen(true);
+                                    }
+                                  }}
+                                  className={`p-1.5 min-h-[68px] relative transition group flex flex-col gap-1.5 ${
+                                    dayIdx === 6 ? "border-r-0" : "border-r border-zinc-800/70"
+                                  } ${
+                                    isSelected
+                                      ? "bg-emerald-500/[0.03]"
+                                      : isCurrentToday
+                                      ? "bg-zinc-800/20"
+                                      : "hover:bg-zinc-800/25"
+                                  }`}
+                                  title={`Clique para agendar às ${hourStr} em ${format(dayDate, "dd/MM")}`}
+                                >
+                                  {hourClasses.map((cls) => {
+                                    const studentColor = getStudentColor(cls.student.name);
+                                    const isCompleted = cls.status === "COMPLETED";
+
+                                    return (
+                                      <div
+                                        key={cls.id}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openMoveModal(cls);
+                                        }}
+                                        className={`p-2 rounded-2xl border transition-all text-left shadow-sm cursor-pointer relative overflow-hidden group/card ${
+                                          isCompleted
+                                            ? "bg-zinc-900/90 text-zinc-400 border-zinc-800 opacity-70 line-through"
+                                            : `${studentColor.bg} border-l-4 ${studentColor.border}`
+                                        }`}
+                                      >
+                                        <div className="flex items-center justify-between gap-1 mb-1">
+                                          <span className="font-mono font-bold text-[11px] flex items-center gap-1">
+                                            <Clock className="w-3 h-3 opacity-70" />
+                                            {cls.startTime} - {cls.endTime}
+                                          </span>
+                                          {isCompleted && (
+                                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
+                                              Concluída
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        <div className="font-black text-xs text-zinc-100 truncate block">
+                                          {cls.student.name}
+                                        </div>
+
+                                        {cls.title && (
+                                          <div className="text-[10px] text-zinc-400 truncate mt-0.5 opacity-90">
+                                            🏋️ {cls.title}
+                                          </div>
+                                        )}
+
+                                        {/* Ações rápidas no Hover */}
+                                        <div className="mt-1.5 pt-1.5 border-t border-zinc-800/50 flex items-center justify-end gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleOpenShareOptions(cls);
+                                            }}
+                                            className="p-1 rounded-lg bg-zinc-900/90 hover:bg-emerald-500/20 text-emerald-400 border border-zinc-800"
+                                            title="Enviar WhatsApp"
+                                          >
+                                            <MessageCircle className="w-3 h-3" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleToggleStatus(cls.id, cls.status);
+                                            }}
+                                            className="p-1 rounded-lg bg-zinc-900/90 hover:bg-emerald-500/20 text-emerald-400 border border-zinc-800"
+                                            title="Concluir"
+                                          >
+                                            <CheckCircle2 className="w-3 h-3" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDeleteClass(cls);
+                                            }}
+                                            className="p-1 rounded-lg bg-zinc-900/90 hover:bg-rose-500/20 text-rose-400 border border-zinc-800"
+                                            title="Desmarcar"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+
+                                  {/* Botão de Adição Sutil no Hover do Slot Vazio */}
+                                  {hourClasses.length === 0 && (
+                                    <div className="hidden group-hover:flex items-center justify-center h-full min-h-[44px] text-zinc-600 hover:text-emerald-400 transition">
+                                      <Plus className="w-4 h-4" />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
