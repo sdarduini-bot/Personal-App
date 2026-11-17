@@ -656,44 +656,44 @@ function AgendaContent() {
 
         <main className="flex-1 p-3.5 sm:p-6 md:p-8 max-w-6xl mx-auto w-full space-y-5 sm:space-y-6">
           {/* ========================================================= */}
-          {/* 1. FITA SUPERIOR DE DIAS (DAY RIBBON)                     */}
+          {/* 1. BARRA SUPERIOR DE CONTROLE E NAVEGAÇÃO                 */}
           {/* ========================================================= */}
-          <div className="bg-zinc-900/90 border border-zinc-800 rounded-3xl p-3.5 sm:p-4 space-y-3 shadow-sm">
-            {/* Navegação de Mês & Ações Rápidas */}
-            <div className="flex items-center justify-between gap-2 px-1">
-              <div className="flex items-center gap-2">
+          <div className="bg-zinc-900/90 border border-zinc-800 rounded-3xl p-3 sm:p-4 space-y-3 shadow-sm">
+            {/* Linha Principal: Mês, Setas, Botão Hoje, Visões e Nova Aula */}
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   type="button"
-                  onClick={() => changeDate(-7)}
-                  className="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
-                  title="Semana Anterior"
+                  onClick={() => changeDate(viewMode === "dia" ? -1 : -7)}
+                  className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
+                  title="Anterior"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-xs sm:text-sm font-bold text-zinc-200 capitalize">
+                <span className="text-sm sm:text-base font-bold text-zinc-100 capitalize font-mono">
                   {format(currentParsedDate, "MMMM yyyy", { locale: ptBR })}
                 </span>
                 <button
                   type="button"
-                  onClick={() => changeDate(7)}
-                  className="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
-                  title="Próxima Semana"
+                  onClick={() => changeDate(viewMode === "dia" ? 1 : 7)}
+                  className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
+                  title="Próximo"
                 >
                   <ChevronRight className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(format(new Date(), "yyyy-MM-dd"))}
+                  className="ml-1 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-emerald-400 transition"
+                >
+                  Hoje
                 </button>
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedDate(format(new Date(), "yyyy-MM-dd"))}
-                  className="px-3 py-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-emerald-400 transition"
-                >
-                  Hoje
-                </button>
-
-                {/* Alternador de Visões */}
-                <div className="hidden sm:flex rounded-xl bg-zinc-950 border border-zinc-800 p-0.5">
+                {/* Alternador de Visões: Dia | Semana | Lista */}
+                <div className="flex rounded-xl bg-zinc-950 border border-zinc-800 p-0.5">
                   {[
                     { id: "dia", label: "Dia" },
                     { id: "semana", label: "Semana" },
@@ -702,9 +702,9 @@ function AgendaContent() {
                     <button
                       key={mode.id}
                       onClick={() => setViewMode(mode.id as any)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                         viewMode === mode.id
-                          ? "bg-zinc-800 text-zinc-100 shadow-sm"
+                          ? "bg-zinc-800 text-zinc-100 shadow-sm font-bold"
                           : "text-zinc-400 hover:text-zinc-200"
                       }`}
                     >
@@ -719,7 +719,7 @@ function AgendaContent() {
                     setModalForm((prev) => ({ ...prev, date: selectedDate }));
                     setIsModalOpen(true);
                   }}
-                  className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-zinc-950 font-bold text-xs transition shadow-md shadow-emerald-600/20"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-zinc-950 font-bold text-xs transition shadow-md shadow-emerald-600/20"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Nova Aula</span>
@@ -727,48 +727,46 @@ function AgendaContent() {
               </div>
             </div>
 
-            {/* Grid dos 7 Dias da Semana (Tátil e Fluido no Celular) */}
-            <div className="grid grid-cols-7 gap-1.5 sm:gap-2 pt-1">
-              {weekDays.map((dayDate) => {
-                const dayStr = format(dayDate, "yyyy-MM-dd");
-                const isSelected = dayStr === selectedDate;
-                const isCurrentToday = isToday(dayDate);
+            {/* Fita Compacta de Dias: visível apenas na visualização "Dia" para não poluir a Semana */}
+            {viewMode === "dia" && (
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2 pt-2 border-t border-zinc-800/60">
+                {weekDays.map((dayDate) => {
+                  const dayStr = format(dayDate, "yyyy-MM-dd");
+                  const isSelected = dayStr === selectedDate;
+                  const isCurrentToday = isToday(dayDate);
 
-                return (
-                  <button
-                    key={dayStr}
-                    type="button"
-                    onClick={() => {
-                      setSelectedDate(dayStr);
-                      if (viewMode !== "dia") setViewMode("dia");
-                    }}
-                    className={`p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center transition-all active:scale-95 relative ${
-                      isSelected
-                        ? "bg-emerald-500 text-zinc-950 font-black shadow-lg shadow-emerald-500/25 ring-2 ring-emerald-400/60 scale-[1.03]"
-                        : isCurrentToday
-                        ? "bg-zinc-800/80 border border-emerald-500/40 text-zinc-100 hover:bg-zinc-800"
-                        : "bg-zinc-950/60 border border-zinc-800/80 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60"
-                    }`}
-                  >
-                    <span
-                      className={`text-[9px] sm:text-[11px] font-bold uppercase tracking-wider block ${
-                        isSelected ? "text-zinc-950" : "text-zinc-400"
+                  return (
+                    <button
+                      key={dayStr}
+                      type="button"
+                      onClick={() => setSelectedDate(dayStr)}
+                      className={`p-2 rounded-2xl flex flex-col items-center justify-center transition-all active:scale-95 relative ${
+                        isSelected
+                          ? "bg-emerald-500 text-zinc-950 font-black shadow-md shadow-emerald-500/20 scale-[1.02]"
+                          : isCurrentToday
+                          ? "bg-zinc-800/80 border border-emerald-500/40 text-zinc-100 hover:bg-zinc-800"
+                          : "bg-zinc-950/60 border border-zinc-800/80 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60"
                       }`}
                     >
-                      {format(dayDate, "EEE", { locale: ptBR })}
-                    </span>
-                    <span className="text-sm sm:text-lg font-black font-mono mt-0.5 block leading-none">
-                      {format(dayDate, "dd")}
-                    </span>
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider block ${
+                          isSelected ? "text-zinc-950" : "text-zinc-400"
+                        }`}
+                      >
+                        {format(dayDate, "EEE", { locale: ptBR })}
+                      </span>
+                      <span className="text-sm font-black font-mono mt-0.5 block leading-none">
+                        {format(dayDate, "dd")}
+                      </span>
 
-                    {/* Indicador de Hoje */}
-                    {isCurrentToday && !isSelected && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 absolute bottom-1" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                      {isCurrentToday && !isSelected && (
+                        <span className="w-1 h-1 rounded-full bg-emerald-400 absolute bottom-1" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Barra de Filtro de Alunos */}
@@ -1621,23 +1619,20 @@ function AgendaContent() {
                               return (
                                 <div
                                   key={`${dayStr}-${hour}`}
-                                  onClick={(e) => {
-                                    // Se clicou no fundo do slot vazio, abre modal para criar aula nesta data/hora
-                                    if (e.target === e.currentTarget) {
-                                      setModalForm((prev) => ({
-                                        ...prev,
-                                        date: dayStr,
-                                        startTime: hourStr,
-                                        endTime: nextHourStr,
-                                      }));
-                                      setIsModalOpen(true);
-                                    }
+                                  onClick={() => {
+                                    setModalForm((prev) => ({
+                                      ...prev,
+                                      date: dayStr,
+                                      startTime: hourStr,
+                                      endTime: nextHourStr,
+                                    }));
+                                    setIsModalOpen(true);
                                   }}
-                                  className={`p-1.5 min-h-[68px] relative transition group flex flex-col gap-1.5 ${
+                                  className={`p-1.5 min-h-[64px] relative transition group flex flex-col gap-1.5 cursor-pointer ${
                                     dayIdx === 6 ? "border-r-0" : "border-r border-zinc-800/70"
                                   } ${
                                     isSelected
-                                      ? "bg-emerald-500/[0.03]"
+                                      ? "bg-emerald-500/[0.04]"
                                       : isCurrentToday
                                       ? "bg-zinc-800/20"
                                       : "hover:bg-zinc-800/25"
@@ -1655,19 +1650,19 @@ function AgendaContent() {
                                           e.stopPropagation();
                                           openMoveModal(cls);
                                         }}
-                                        className={`p-2 rounded-2xl border transition-all text-left shadow-sm cursor-pointer relative overflow-hidden group/card ${
+                                        className={`p-2 rounded-xl border transition-all text-left shadow-sm cursor-pointer relative overflow-hidden group/card ${
                                           isCompleted
                                             ? "bg-zinc-900/90 text-zinc-400 border-zinc-800 opacity-70 line-through"
                                             : `${studentColor.bg} border-l-4 ${studentColor.border}`
                                         }`}
                                       >
-                                        <div className="flex items-center justify-between gap-1 mb-1">
-                                          <span className="font-mono font-bold text-[11px] flex items-center gap-1">
-                                            <Clock className="w-3 h-3 opacity-70" />
+                                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                                          <span className="font-mono font-bold text-[10px] flex items-center gap-1 opacity-90">
+                                            <Clock className="w-2.5 h-2.5 opacity-70" />
                                             {cls.startTime} - {cls.endTime}
                                           </span>
                                           {isCompleted && (
-                                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
+                                            <span className="text-[8px] font-bold px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-400">
                                               Concluída
                                             </span>
                                           )}
@@ -1678,13 +1673,13 @@ function AgendaContent() {
                                         </div>
 
                                         {cls.title && (
-                                          <div className="text-[10px] text-zinc-400 truncate mt-0.5 opacity-90">
+                                          <div className="text-[10px] text-zinc-400 truncate mt-0.5 opacity-80">
                                             🏋️ {cls.title}
                                           </div>
                                         )}
 
                                         {/* Ações rápidas no Hover */}
-                                        <div className="mt-1.5 pt-1.5 border-t border-zinc-800/50 flex items-center justify-end gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                        <div className="mt-1 pt-1 border-t border-zinc-800/50 flex items-center justify-end gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
                                           <button
                                             type="button"
                                             onClick={(e) => {
@@ -1725,8 +1720,8 @@ function AgendaContent() {
 
                                   {/* Botão de Adição Sutil no Hover do Slot Vazio */}
                                   {hourClasses.length === 0 && (
-                                    <div className="hidden group-hover:flex items-center justify-center h-full min-h-[44px] text-zinc-600 hover:text-emerald-400 transition">
-                                      <Plus className="w-4 h-4" />
+                                    <div className="hidden group-hover:flex items-center justify-center h-full min-h-[44px] text-zinc-500 group-hover:text-emerald-400 transition">
+                                      <Plus className="w-4 h-4 pointer-events-none" />
                                     </div>
                                   )}
                                 </div>
